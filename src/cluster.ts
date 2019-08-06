@@ -27,7 +27,7 @@ export class Cluster {
   ) {
     if (!clusterId || !clusterSecret) throw new Error('missing config')
     this.auth = `${Buffer.from(`${this.clusterId}:${this.clusterSecret}`)}`
-    this.host = process.env.CLUSTER_HOST
+    this.host = process.env.CLUSTER_IP
     this.port = parseInt(process.env.CLUSTER_PORT, 10)
   }
 

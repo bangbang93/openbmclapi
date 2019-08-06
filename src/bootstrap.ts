@@ -2,7 +2,7 @@ import * as colors from 'colors/safe'
 import {Cluster} from './cluster'
 
 export async function bootstrap(): Promise<void> {
-  if (!process.env.CLUSTER_HOST || !process.env.CLUSTER_PORT) {
+  if (!process.env.CLUSTER_PORT) {
     throw new Error('missing CLUSTER_HOST or CLUSTER_PORT')
   }
   const cluster = new Cluster(
