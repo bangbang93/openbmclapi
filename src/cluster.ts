@@ -15,7 +15,7 @@ interface IFileList {
 export class Cluster {
   private readonly baseUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly auth: string
-  private readonly cacheDir = join(__dirname, '../cache')
+  private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
   private readonly port: number
 
