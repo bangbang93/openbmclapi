@@ -1,6 +1,6 @@
 import * as colors from 'colors/safe'
-// eslint-disable-next-line no-duplicate-imports
 import * as express from 'express'
+// eslint-disable-next-line no-duplicate-imports
 import {Express, NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists} from 'fs-extra'
 import * as got from 'got'
@@ -42,7 +42,7 @@ export class Cluster {
 
   public async syncFiles(fileList: IFileList): Promise<void> {
     const totalSize = fileList.files.reduce((p, e) => p + e.size, 0)
-    const bar = new ProgressBar('build file info [:bar] :current/:total eta:etas :percent :rate/cps', {
+    const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
       total: totalSize,
       width: 80,
     })
