@@ -9,7 +9,7 @@ import * as ProgressBar from 'progress'
 import morgan = require('morgan')
 
 interface IFileList {
-  files: {path: string; hash: string}[]
+  files: {path: string; hash: string; size: number}[]
 }
 
 export class Cluster {
@@ -41,12 +41,12 @@ export class Cluster {
   }
 
   public async syncFiles(fileList: IFileList): Promise<void> {
+    const totalSize = fileList.files.reduce((p, e) => p + e.size, 0)
     const bar = new ProgressBar('build file info [:bar] :current/:total eta:etas :percent :rate/cps', {
-      total: fileList.files.length,
-      width: 50,
+      total: totalSize,
+      width: 80,
     })
     for (const file of fileList.files) {
-      bar.tick()
       const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
       if (await pathExists(path)) {
         continue
@@ -54,6 +54,7 @@ export class Cluster {
       bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       const res = await got.get(file.path, {baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null})
       await outputFile(path, res.body)
+      bar.tick(file.size)
     }
   }
 
