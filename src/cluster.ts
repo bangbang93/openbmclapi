@@ -1,9 +1,12 @@
-import * as express from 'express'
+import * as colors from 'colors/safe'
 // eslint-disable-next-line no-duplicate-imports
+import * as express from 'express'
 import {Express, NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists} from 'fs-extra'
 import * as got from 'got'
 import {join} from 'path'
+import * as ProgressBar from 'progress'
+import morgan = require('morgan')
 
 interface IFileList {
   files: {path: string; hash: string}[]
@@ -38,19 +41,26 @@ export class Cluster {
   }
 
   public async syncFiles(fileList: IFileList): Promise<void> {
+    const bar = new ProgressBar('build file info [:bar] :current/:total eta:etas :percent :rate/cps', {
+      total: fileList.files.length,
+      width: 50,
+    })
     for (const file of fileList.files) {
+      bar.tick()
       const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
       if (await pathExists(path)) {
         continue
       }
+      bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       const res = await got.get(file.path, {baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null})
       await outputFile(path, res.body)
     }
   }
 
   public setupExpress(): Express {
-    this.express = express()
-    this.express.use('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
+    const app = this.express = express()
+    app.use(morgan('dev'))
+    app.use('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
       try {
         const hash = req.params.hash
         const path = join(this.cacheDir, hash.substr(0, 2), hash)

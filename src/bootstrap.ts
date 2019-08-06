@@ -1,3 +1,4 @@
+import * as colors from 'colors/safe'
 import {Cluster} from './cluster'
 
 export async function bootstrap(): Promise<void> {
@@ -15,7 +16,7 @@ export async function bootstrap(): Promise<void> {
   await cluster.listen()
   await cluster.enable()
   // eslint-disable-next-line no-console
-  console.log(`done, serving ${files.files.length} files`)
+  console.log(colors.rainbow(`done, serving ${files.files.length} files`))
 
   const onStop = async (): Promise<void> => {
     await cluster.disable()
