@@ -18,6 +18,7 @@ export class Cluster {
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
   private readonly port: number
+  private readonly ua: 'openbmclapi-cluster'
 
   private express: Express
 
@@ -36,6 +37,9 @@ export class Cluster {
       baseUrl: this.baseUrl,
       json: true,
       auth: this.auth,
+      headers: {
+        'user-agent': this.ua,
+      },
     })
     return res.body
   }
@@ -52,7 +56,12 @@ export class Cluster {
         continue
       }
       bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
-      const res = await got.get(file.path, {baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null})
+      const res = await got.get(file.path, {
+        baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null,
+        headers: {
+          'user-agent': this.ua,
+        },
+      })
       await outputFile(path, res.body)
       bar.tick(file.size)
     }
@@ -92,6 +101,9 @@ export class Cluster {
         host: this.host,
         port: this.port,
       },
+      headers: {
+        'user-agent': this.ua,
+      },
     })
   }
 
@@ -99,12 +111,19 @@ export class Cluster {
     await got.post('/openbmclapi/disable', {
       baseUrl: this.baseUrl,
       auth: this.auth,
+      headers: {
+        'user-agent': this.ua,
+      },
     })
   }
 
   public async downloadFile(hash: string): Promise<void> {
-    const res = await got.get(`/openbmclapi/download/${hash}`,
-      {auth: this.auth, baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null})
+    const res = await got.get(`/openbmclapi/download/${hash}`, {
+      auth: this.auth, baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null,
+      headers: {
+        'user-agent': this.ua,
+      },
+    })
 
     const path = join(this.cacheDir, hash.substr(0, 2), hash)
     await outputFile(path, res.body)
