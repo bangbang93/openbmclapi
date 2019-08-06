@@ -10,7 +10,7 @@ interface IFileList {
 }
 
 export class Cluster {
-  private readonly baseUrl = 'http://localhost:4000'
+  private readonly baseUrl = process.env.CLUSTER_BMCLAPI || 'http://openbmclapi.bangbang93.com'
   private readonly auth: string
   private readonly cacheDir = join(__dirname, '../cache')
   private readonly host: string
