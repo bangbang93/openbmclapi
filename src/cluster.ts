@@ -13,6 +13,8 @@ export class Cluster {
   private readonly baseUrl = 'http://localhost:4000'
   private readonly auth: string
   private readonly cacheDir = join(__dirname, '../cache')
+  private readonly host: string
+  private readonly port: number
 
   private express: Express
 
@@ -22,6 +24,8 @@ export class Cluster {
   ) {
     if (!clusterId || !clusterSecret) throw new Error('missing config')
     this.auth = `${Buffer.from(`${this.clusterId}:${this.clusterSecret}`)}`
+    this.host = process.env.CLUSTER_HOST
+    this.port = parseInt(process.env.CLUSTER_PORT, 10)
   }
 
   public async getFileList(): Promise<IFileList> {
@@ -56,7 +60,7 @@ export class Cluster {
 
   public async listen(): Promise<void> {
     return new Promise((resolve) => {
-      this.express.listen(4001, resolve)
+      this.express.listen(this.port, resolve)
     })
   }
 
@@ -66,9 +70,16 @@ export class Cluster {
       auth: this.auth,
       json: true,
       body: {
-        host: 'localhost',
-        port: 4001,
+        host: this.host,
+        port: this.port,
       },
+    })
+  }
+
+  public async disable(): Promise<void> {
+    await got.post('/openbmclapi/disable', {
+      baseUrl: this.baseUrl,
+      auth: this.auth,
     })
   }
 }
