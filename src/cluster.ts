@@ -1,6 +1,6 @@
 import * as express from 'express'
 // eslint-disable-next-line no-duplicate-imports
-import {Express, Request, Response} from 'express'
+import {Express, NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists} from 'fs-extra'
 import * as got from 'got'
 import {join} from 'path'
@@ -50,9 +50,17 @@ export class Cluster {
 
   public setupExpress(): Express {
     this.express = express()
-    this.express.use('/download/:hash', (req: Request, res: Response) => {
-      const hash = req.params.hash
-      res.sendFile(join(this.cacheDir, hash.substr(0, 2), hash))
+    this.express.use('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const hash = req.params.hash
+        const path = join(this.cacheDir, hash.substr(0, 2), hash)
+        if (!await pathExists(path)) {
+          await this.downloadFile(hash)
+        }
+        return res.sendFile(path)
+      } catch (err) {
+        return next(err)
+      }
     })
 
     return this.express
@@ -81,5 +89,13 @@ export class Cluster {
       baseUrl: this.baseUrl,
       auth: this.auth,
     })
+  }
+
+  public async downloadFile(hash: string): Promise<void> {
+    const res = await got.get(`/openbmclapi/download/${hash}`,
+      {auth: this.auth, baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null})
+
+    const path = join(this.cacheDir, hash.substr(0, 2), hash)
+    await outputFile(path, res.body)
   }
 }
