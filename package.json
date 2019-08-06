@@ -1,0 +1,37 @@
+{
+  "name": "openbmclapi",
+  "version": "0.0.0",
+  "description": "openbmclapi",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bangbang93/openbmclapi.git"
+  },
+  "author": "bangbang93 <bangbang93@163.com>",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/bangbang93/openbmclapi/issues"
+  },
+  "homepage": "https://github.com/bangbang93/openbmclapi#readme",
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "express": "^4.17.1",
+    "fs-extra": "^8.1.0",
+    "got": "^9.6.0"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^4.17.0",
+    "@types/fs-extra": "^8.0.0",
+    "@types/got": "^9.6.5",
+    "@types/node": "^12.6.9",
+    "@typescript-eslint/eslint-plugin": "^1.13.0",
+    "@typescript-eslint/parser": "^1.13.0",
+    "eslint": "^6.1.0",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3"
+  }
+}
