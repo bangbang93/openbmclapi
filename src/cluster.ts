@@ -60,6 +60,7 @@ export class Cluster {
       }
       bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       const res = await got.get(file.path, {
+        auth: this.auth,
         baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null,
         headers: {
           'user-agent': this.ua,
