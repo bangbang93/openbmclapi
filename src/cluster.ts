@@ -51,7 +51,7 @@ export class Cluster {
   public async syncFiles(fileList: IFileList): Promise<void> {
     const files = await Bluebird.filter(fileList.files, async (file) => {
       const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
-      return pathExists(path)
+      return !await pathExists(path)
     })
     const totalSize = files.reduce((p, e) => p + e.size, 0)
     const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
@@ -59,11 +59,8 @@ export class Cluster {
       width: 80,
     })
     for (const file of files) {
-      bar.tick(file.size)
       const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
-      if (await pathExists(path)) {
-        continue
-      }
+      bar.tick(file.size)
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       } else {
