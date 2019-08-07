@@ -1,13 +1,14 @@
 import * as colors from 'colors/safe'
 import {Cluster} from './cluster'
 
-export async function bootstrap(): Promise<void> {
+export async function bootstrap(version: string): Promise<void> {
   if (!process.env.CLUSTER_PORT) {
     throw new Error('missing CLUSTER_PORT')
   }
   const cluster = new Cluster(
     process.env.CLUSTER_ID,
     process.env.CLUSTER_SECRET,
+    version,
   )
 
   const files = await cluster.getFileList()

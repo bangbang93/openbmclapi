@@ -19,18 +19,20 @@ export class Cluster {
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
   private readonly port: number
-  private readonly ua = 'openbmclapi-cluster'
+  private readonly ua: string
 
   private server: Server
 
   public constructor(
     private readonly clusterId: string,
     private readonly clusterSecret: string,
+    version: string,
   ) {
     if (!clusterId || !clusterSecret) throw new Error('missing config')
     this.auth = `${Buffer.from(`${this.clusterId}:${this.clusterSecret}`)}`
     this.host = process.env.CLUSTER_IP
     this.port = parseInt(process.env.CLUSTER_PORT, 10)
+    this.ua = `openbmclapi-cluster/${version}`
   }
 
   public async getFileList(): Promise<IFileList> {
