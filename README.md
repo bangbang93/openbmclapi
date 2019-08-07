@@ -9,7 +9,7 @@
 ### 从源码安装
 #### 环境
  - nodejs 8以上
- - windows/macOS/linux, x86 or arm均可（凡是nodejs支持的环境都可以)
+ - windows/macOS/linux, x86/arm均可（凡是nodejs支持的环境都可以)
 #### 设置环境
  1. 去<https://nodejs.org/zh-cn/>下载LTS版本的nodejs并安装
  2. clone并安装依赖
@@ -31,4 +31,4 @@ CLUSTER_PORT=对外访问端口
 ```
 CLUSTER_ID和CLUSTER_SECRET请联系我获取
 
-如果配置无误的话，就会开始拉取文件，拉取完成后就会开始等待请求了
+如果配置无误的话，就会开始拉取文件，拉取完成后就会开始等待服务器分发请求了
