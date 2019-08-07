@@ -19,6 +19,12 @@ export async function bootstrap(version: string): Promise<void> {
   await cluster.enable()
   console.log(colors.rainbow(`done, serving ${files.files.length} files`))
 
+  async function keepAlive(): Promise<void> {
+    await cluster.keepAlive()
+    setTimeout(keepAlive, ms('1m'))
+  }
+  setTimeout(keepAlive, ms('1m'))
+
   async function checkFile(): Promise<void> {
     console.log(colors.gray('refresh files'))
     const files = await cluster.getFileList()

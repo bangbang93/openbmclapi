@@ -132,4 +132,14 @@ export class Cluster {
     const path = join(this.cacheDir, hash.substr(0, 2), hash)
     await outputFile(path, res.body)
   }
+
+  public async keepAlive(): Promise<void> {
+    await got.post('/openbmclapi/keep-alive', {
+      baseUrl: this.baseUrl,
+      auth: this.auth,
+      headers: {
+        'user-agent': this.ua,
+      },
+    })
+  }
 }
