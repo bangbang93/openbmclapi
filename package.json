@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/bangbang93/openbmclapi#readme",
   "dependencies": {
+    "bluebird": "^3.5.5",
     "colors": "^1.3.3",
     "dotenv": "^8.0.0",
     "express": "^4.17.1",
@@ -27,6 +28,7 @@
     "progress": "^2.0.3"
   },
   "devDependencies": {
+    "@types/bluebird": "^3.5.27",
     "@types/colors": "^1.2.1",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.0",
