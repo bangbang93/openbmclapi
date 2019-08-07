@@ -54,11 +54,12 @@ export class Cluster {
       width: 80,
     })
     for (const file of fileList.files) {
+      bar.tick(file.size)
       const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
       if (await pathExists(path)) {
         continue
       }
-      bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
+      console.log(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       const res = await got.get(file.path, {
         auth: this.auth,
         baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null,
@@ -67,7 +68,6 @@ export class Cluster {
         },
       })
       await outputFile(path, res.body)
-      bar.tick(file.size)
     }
   }
 
