@@ -1,9 +1,10 @@
 import * as colors from 'colors/safe'
 import * as express from 'express'
 // eslint-disable-next-line no-duplicate-imports
-import {Express, NextFunction, Request, Response} from 'express'
+import {NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists} from 'fs-extra'
 import * as got from 'got'
+import {createServer, Server} from 'http'
 import {join} from 'path'
 import * as ProgressBar from 'progress'
 import morgan = require('morgan')
@@ -20,7 +21,7 @@ export class Cluster {
   private readonly port: number
   private readonly ua: 'openbmclapi-cluster'
 
-  private express: Express
+  private server: Server
 
   public constructor(
     private readonly clusterId: string,
@@ -67,8 +68,8 @@ export class Cluster {
     }
   }
 
-  public setupExpress(): Express {
-    const app = this.express = express()
+  public setupExpress(): Server {
+    const app = express()
     app.use(morgan('dev'))
     app.use('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -82,13 +83,14 @@ export class Cluster {
         return next(err)
       }
     })
+    this.server = createServer(app)
 
-    return this.express
+    return this.server
   }
 
   public async listen(): Promise<void> {
     return new Promise((resolve) => {
-      this.express.listen(this.port, resolve)
+      this.server.listen(this.port, resolve)
     })
   }
 

@@ -3,7 +3,7 @@ import {Cluster} from './cluster'
 
 export async function bootstrap(): Promise<void> {
   if (!process.env.CLUSTER_PORT) {
-    throw new Error('missing CLUSTER_HOST or CLUSTER_PORT')
+    throw new Error('missing CLUSTER_PORT')
   }
   const cluster = new Cluster(
     process.env.CLUSTER_ID,
@@ -12,7 +12,7 @@ export async function bootstrap(): Promise<void> {
 
   const files = await cluster.getFileList()
   await cluster.syncFiles(files)
-  cluster.setupExpress()
+  const server = cluster.setupExpress()
   await cluster.listen()
   await cluster.enable()
   // eslint-disable-next-line no-console
@@ -21,8 +21,8 @@ export async function bootstrap(): Promise<void> {
   const onStop = async (): Promise<void> => {
     await cluster.disable()
     // eslint-disable-next-line no-console
-    console.log('unregister success')
-    process.exit(0)
+    console.log('unregister success, waiting for background task')
+    server.close()
   }
   process.on('SIGTERM', onStop)
   process.on('SIGINT', onStop)
