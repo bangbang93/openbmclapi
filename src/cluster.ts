@@ -59,7 +59,11 @@ export class Cluster {
       if (await pathExists(path)) {
         continue
       }
-      console.log(`${colors.green('downloading')} ${colors.underline(file.path)}`)
+      if (process.stderr.isTTY) {
+        bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
+      } else {
+        console.log(`${colors.green('downloading')} ${colors.underline(file.path)}`)
+      }
       const res = await got.get(file.path, {
         auth: this.auth,
         baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null,
