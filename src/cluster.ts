@@ -19,7 +19,7 @@ export class Cluster {
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
   private readonly port: number
-  private readonly ua: 'openbmclapi-cluster'
+  private readonly ua = 'openbmclapi-cluster'
 
   private server: Server
 
