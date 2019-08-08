@@ -20,6 +20,7 @@ export class Cluster {
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
   private readonly port: number
+  private readonly publicPort: number
   private readonly ua: string
 
   private server: Server
@@ -33,6 +34,7 @@ export class Cluster {
     this.auth = `${Buffer.from(`${this.clusterId}:${this.clusterSecret}`)}`
     this.host = process.env.CLUSTER_IP
     this.port = parseInt(process.env.CLUSTER_PORT, 10)
+    this.publicPort = parseInt(process.env.CLUSTER_PUBLIC_PORT, 10) || this.port
     this.ua = `openbmclapi-cluster/${version}`
   }
 
@@ -110,7 +112,7 @@ export class Cluster {
       json: true,
       body: {
         host: this.host,
-        port: this.port,
+        port: this.publicPort,
       },
       headers: {
         'user-agent': this.ua,
