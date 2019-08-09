@@ -13,6 +13,7 @@ export async function bootstrap(version: string): Promise<void> {
   )
 
   const files = await cluster.getFileList()
+  console.log(colors.green(`${files.files.length} files`))
   await cluster.syncFiles(files)
   const server = cluster.setupExpress()
   await cluster.listen()
