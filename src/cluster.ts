@@ -9,6 +9,7 @@ import {createServer, Server} from 'http'
 import {join} from 'path'
 import * as ProgressBar from 'progress'
 import morgan = require('morgan')
+import ms = require('ms')
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -149,6 +150,7 @@ export class Cluster {
       headers: {
         'user-agent': this.ua,
       },
+      timeout: ms('10s'),
     })
   }
 }

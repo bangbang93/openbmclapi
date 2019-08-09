@@ -22,7 +22,12 @@ export async function bootstrap(version: string): Promise<void> {
 
   let keepAliveInterval = setTimeout(keepAlive, ms('1m'))
   async function keepAlive(): Promise<void> {
-    await cluster.keepAlive()
+    try {
+      await cluster.keepAlive()
+    } catch (e) {
+      console.error('keep alive error')
+      console.error(e)
+    }
     keepAliveInterval = setTimeout(keepAlive, ms('1m'))
   }
 
