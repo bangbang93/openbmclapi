@@ -2,7 +2,7 @@
 ---
 ### DOCKER
 ```bash
-docker run -e CLUSTER_ID=xxx -e CLUSTER_SECRET=yyy -p 4000:4000 bangbang93/openbmclapi
+docker run -e CLUSTER_ID=xxx -e CLUSTER_SECRET=yyy -v /opt/openbmclapi/cache -p 4000:4000 bangbang93/openbmclapi
 ```
 
 若要使用不同端口，请添加CLUSTER_PUBLIC_PORT环境变量以修改上报端口
