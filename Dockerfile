@@ -17,4 +17,5 @@ RUN npm ci --prod
 
 ENV CLUSTER_PORT=4000
 EXPOSE 4000
+VOLUME /opt/openbmclapi/cache
 CMD node dist/index
