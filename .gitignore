@@ -92,3 +92,4 @@ public/
 .vscode
 .env
 /cache
+dist

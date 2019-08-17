@@ -15,4 +15,5 @@ COPY --from=install /opt/openbmclapi/dist ./dist
 
 RUN npm ci --prod
 
+ENV CLUSTER_PORT=4000
 CMD node dist/index
