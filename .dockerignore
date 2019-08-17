@@ -1,0 +1,12 @@
+# Created by .ignore support plugin (hsz.mobi)
+### bangbang93 template
+# IntelliJ project files
+.idea
+*.iml
+out
+gen
+
+# node
+node_modules
+dist
+cache

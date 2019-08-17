@@ -1,6 +1,9 @@
 import {config} from 'dotenv'
 import {bootstrap} from './bootstrap'
-import * as packageJson from '../package.json'
+import * as fs from 'fs'
+import * as path from 'path'
+
+const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'))
 
 config()
 bootstrap(packageJson.version)
