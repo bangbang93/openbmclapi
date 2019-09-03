@@ -143,8 +143,8 @@ export class Cluster {
     await outputFile(path, res.body)
   }
 
-  public async keepAlive(): Promise<void> {
-    await got.post('/openbmclapi/keep-alive', {
+  public async keepAlive(): Promise<boolean> {
+    const res = await got.post('/openbmclapi/keep-alive', {
       baseUrl: this.baseUrl,
       auth: this.auth,
       headers: {
@@ -152,5 +152,6 @@ export class Cluster {
       },
       timeout: ms('10s'),
     })
+    return res.statusCode < 300
   }
 }

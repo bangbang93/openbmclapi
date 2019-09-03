@@ -23,7 +23,11 @@ export async function bootstrap(version: string): Promise<void> {
   let keepAliveInterval = setTimeout(keepAlive, ms('1m'))
   async function keepAlive(): Promise<void> {
     try {
-      await cluster.keepAlive()
+      const status = await cluster.keepAlive()
+      if (!status) {
+        console.log('kicked by server')
+        process.exit(1)
+      }
     } catch (e) {
       console.error('keep alive error')
       console.error(e)
