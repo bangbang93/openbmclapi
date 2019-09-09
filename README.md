@@ -4,6 +4,18 @@
 ```bash
 docker run -e CLUSTER_ID=xxx -e CLUSTER_SECRET=yyy -v /opt/openbmclapi/cache -p 4000:4000 bangbang93/openbmclapi
 ```
+```bash
+docker run -d \
+-e CLUSTER_ID=${CLUSTER_ID} \
+-e CLUSTER_SECRET=${CLUSTER_SECRET} \
+-e CLUSTER_PUBLIC_PORT=${CLUSTER_PORT} \
+-e CLUSTER_IP=example.com \
+-v /data/openbmclapi:/opt/openbmclapi/cache \
+-p ${CLUSTER_PORT}:4000 \
+--restart always \
+bangbang93/openbmclapi
+
+```
 
 若要使用不同端口，请添加CLUSTER_PUBLIC_PORT环境变量以修改上报端口
 
