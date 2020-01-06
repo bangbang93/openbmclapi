@@ -48,3 +48,6 @@ CLUSTER_PORT=对外访问端口
 CLUSTER_ID和CLUSTER_SECRET请联系我获取
 
 如果配置无误的话，就会开始拉取文件，拉取完成后就会开始等待服务器分发请求了
+### 同步数据
+openbmclapi会自行同步需要的文件，但是初次同步可能会速度过慢，如果您的节点是个全量节点，可以通过以下命令使用rsync快速同步
+`rsync -azvP openbmclapi@jp.bmclapi.933.moe::openbmclapi cache`
