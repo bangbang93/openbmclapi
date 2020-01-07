@@ -151,7 +151,8 @@ export class Cluster {
         'user-agent': this.ua,
       },
       timeout: ms('10s'),
+      throwHttpErrors: false,
     })
-    return res.statusCode < 300
+    return res.statusCode < 400
   }
 }
