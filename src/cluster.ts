@@ -90,6 +90,10 @@ export class Cluster {
         if (!await pathExists(path)) {
           await this.downloadFile(hash)
         }
+        const name = req.query.name
+        if (name) {
+          res.attachment(name)
+        }
         return res.sendFile(path)
       } catch (err) {
         return next(err)
