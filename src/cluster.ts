@@ -61,7 +61,8 @@ export class Cluster {
       total: totalSize,
       width: 80,
     })
-    for (const file of files) {
+    const sortedFiles = files.sort((a, b) => a.path > b.path ? 1 : 0)
+    for (const file of sortedFiles) {
       const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
       bar.tick(file.size)
       if (process.stderr.isTTY) {
