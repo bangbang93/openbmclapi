@@ -83,7 +83,7 @@ export class Cluster {
 
   public setupExpress(): Server {
     const app = express()
-    app.use(morgan('dev'))
+    app.use(morgan('combined'))
     app.use('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
       try {
         const hash = req.params.hash
