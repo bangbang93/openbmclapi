@@ -23,6 +23,7 @@ export class Cluster {
   private readonly publicPort: number
   private readonly ua: string
   private readonly got: Got
+  private readonly requestCache = new Map()
 
   private server: Server
 
@@ -49,6 +50,7 @@ export class Cluster {
   public async getFileList(): Promise<IFileList> {
     const res = await this.got.get<IFileList>('openbmclapi/files', {
       responseType: 'json',
+      cache: this.requestCache,
     })
     return res.body
   }
