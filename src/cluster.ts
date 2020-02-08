@@ -72,7 +72,7 @@ export class Cluster {
         console.log(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       }
       let lastProgress = 0
-      const res = await this.got.get(file.path)
+      const res = await this.got.get(file.path.substr(1), {searchParams: {noopen: 1}})
         .on('downloadProgress', (progress) => {
           bar.tick(progress.transferred - lastProgress)
           lastProgress = progress.transferred
