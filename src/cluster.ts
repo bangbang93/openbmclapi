@@ -4,7 +4,7 @@ import * as express from 'express'
 // eslint-disable-next-line no-duplicate-imports
 import {NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists} from 'fs-extra'
-import * as got from 'got'
+import got, {Got} from 'got'
 import {createServer, Server} from 'http'
 import {join} from 'path'
 import * as ProgressBar from 'progress'
@@ -16,13 +16,13 @@ interface IFileList {
 }
 
 export class Cluster {
-  private readonly baseUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
-  private readonly auth: string
+  private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
   private readonly port: number
   private readonly publicPort: number
   private readonly ua: string
+  private readonly got: Got
 
   private server: Server
 
@@ -32,21 +32,23 @@ export class Cluster {
     version: string,
   ) {
     if (!clusterId || !clusterSecret) throw new Error('missing config')
-    this.auth = `${Buffer.from(`${this.clusterId}:${this.clusterSecret}`)}`
     this.host = process.env.CLUSTER_IP
     this.port = parseInt(process.env.CLUSTER_PORT, 10)
     this.publicPort = parseInt(process.env.CLUSTER_PUBLIC_PORT, 10) || this.port
     this.ua = `openbmclapi-cluster/${version}`
-  }
-
-  public async getFileList(): Promise<IFileList> {
-    const res = await got.get('/openbmclapi/files', {
-      baseUrl: this.baseUrl,
-      json: true,
-      auth: this.auth,
+    this.got = got.extend({
+      prefixUrl: this.prefixUrl,
+      username: this.clusterId,
+      password: this.clusterSecret,
       headers: {
         'user-agent': this.ua,
       },
+    })
+  }
+
+  public async getFileList(): Promise<IFileList> {
+    const res = await this.got.get<IFileList>('openbmclapi/files', {
+      responseType: 'json',
     })
     return res.body
   }
@@ -64,19 +66,17 @@ export class Cluster {
     const sortedFiles = files.sort((a, b) => a.path > b.path ? 1 : 0)
     for (const file of sortedFiles) {
       const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
-      bar.tick(file.size)
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       } else {
         console.log(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       }
-      const res = await got.get(file.path, {
-        auth: this.auth,
-        baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null,
-        headers: {
-          'user-agent': this.ua,
-        },
-      })
+      let lastProgress = 0
+      const res = await this.got.get(file.path)
+        .on('downloadProgress', (progress) => {
+          bar.tick(progress.transferred - lastProgress)
+          lastProgress = progress.transferred
+        })
       await outputFile(path, res.body)
     }
   }
@@ -112,36 +112,22 @@ export class Cluster {
   }
 
   public async enable(): Promise<void> {
-    await got.post('/openbmclapi/enable', {
-      baseUrl: this.baseUrl,
-      auth: this.auth,
-      json: true,
-      body: {
+    await this.got.post('openbmclapi/enable', {
+      json: {
         host: this.host,
         port: this.publicPort,
-      },
-      headers: {
-        'user-agent': this.ua,
       },
     })
   }
 
   public async disable(): Promise<void> {
-    await got.post('/openbmclapi/disable', {
-      baseUrl: this.baseUrl,
-      auth: this.auth,
-      headers: {
-        'user-agent': this.ua,
-      },
-    })
+    await this.got.post('openbmclapi/disable')
   }
 
   public async downloadFile(hash: string): Promise<void> {
-    const res = await got.get(`/openbmclapi/download/${hash}`, {
-      auth: this.auth, baseUrl: this.baseUrl, query: {noopen: 1}, encoding: null,
-      headers: {
-        'user-agent': this.ua,
-      },
+    const res = await this.got.get(`openbmclapi/download/${hash}`, {
+      responseType: 'buffer',
+      searchParams: {noopen: 1},
     })
 
     const path = join(this.cacheDir, hash.substr(0, 2), hash)
@@ -149,12 +135,7 @@ export class Cluster {
   }
 
   public async keepAlive(): Promise<boolean> {
-    const res = await got.post('/openbmclapi/keep-alive', {
-      baseUrl: this.baseUrl,
-      auth: this.auth,
-      headers: {
-        'user-agent': this.ua,
-      },
+    const res = await this.got.post('openbmclapi/keep-alive', {
       timeout: ms('10s'),
       throwHttpErrors: false,
     })
