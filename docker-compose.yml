@@ -1,0 +1,14 @@
+version: 3
+services:
+  openbmclapi:
+    image: bangbang93/openbmclapi
+    environment:
+      CLUSTER_ID: ''
+      CLUSTER_SECRET: ''
+      CLUSTER_PUBLIC_PORT: 4000
+#      CLUSTER_IP: ''
+    volumes:
+    - ./cache:/opt/openbmclapi/cache
+    ports:
+    - 4000:4000
+    restart: always
