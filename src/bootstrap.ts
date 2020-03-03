@@ -23,7 +23,7 @@ export async function bootstrap(version: string): Promise<void> {
   } catch (e) {
     if (e instanceof got.HTTPError) {
       console.error(e)
-      console.error(e.response.body)
+      console.error(e.response.body.toString())
     }
   }
   console.log(colors.rainbow(`done, serving ${files.files.length} files`))
