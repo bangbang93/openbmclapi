@@ -1,5 +1,6 @@
 安装
 ---
+### 提示！Bangbang93的这个软件极不稳定，稍有不慎你会连人带机螺旋升天，请谨慎使用
 ### DOCKER
 ```bash
 docker run -e CLUSTER_ID=xxx -e CLUSTER_SECRET=yyy -v /opt/openbmclapi/cache -p 4000:4000 bangbang93/openbmclapi
