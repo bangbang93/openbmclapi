@@ -8,8 +8,9 @@ import got, {Got} from 'got'
 import {createServer, Server} from 'http'
 import {join} from 'path'
 import * as ProgressBar from 'progress'
+import * as io from 'socket.io-client'
 import morgan = require('morgan')
-import ms = require('ms')
+import Socket = SocketIOClient.Socket
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -24,6 +25,7 @@ export class Cluster {
   private readonly ua: string
   private readonly got: Got
   private readonly requestCache = new Map()
+  private readonly io: Socket
 
   private server: Server
 
@@ -46,6 +48,15 @@ export class Cluster {
       },
       responseType: 'buffer',
     })
+    this.io = io.connect(`${this.prefixUrl}`, {
+      query: {
+        clusterId: this.clusterId, clusterSecret: this.clusterSecret,
+      },
+    })
+    this.io.on('connect', () => console.log('connected'))
+    this.io.on('message', (msg) => console.log(msg))
+    this.io.on('disconnect', () => console.log('disconnect'))
+    this.io.on('error', (err) => console.error(err))
   }
 
   public async getFileList(): Promise<IFileList> {
@@ -116,17 +127,26 @@ export class Cluster {
   }
 
   public async enable(): Promise<void> {
-    await this.got.post('openbmclapi/enable', {
-      json: {
+    return new Promise((resolve, reject) => {
+      this.io.emit('enable', {
         host: this.host,
         port: this.publicPort,
         version: this.version,
-      },
+      }, (ack) => {
+        if (ack !== true) return reject(ack)
+        resolve()
+      })
     })
   }
 
   public async disable(): Promise<void> {
-    await this.got.post('openbmclapi/disable')
+    return new Promise((resolve, reject) => {
+      this.io.emit('disable', null, (ack) => {
+        if (ack !== true) return reject(ack)
+        this.io.disconnect()
+        resolve()
+      })
+    })
   }
 
   public async downloadFile(hash: string): Promise<void> {
@@ -140,10 +160,10 @@ export class Cluster {
   }
 
   public async keepAlive(): Promise<boolean> {
-    const res = await this.got.post('openbmclapi/keep-alive', {
-      timeout: ms('10s'),
-      throwHttpErrors: false,
+    return new Promise((resolve) => {
+      this.io.emit('keep-alive', new Date(), (date) => {
+        resolve(date)
+      })
     })
-    return res.statusCode < 400
   }
 }
