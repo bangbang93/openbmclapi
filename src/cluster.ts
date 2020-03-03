@@ -44,6 +44,7 @@ export class Cluster {
       headers: {
         'user-agent': this.ua,
       },
+      responseType: 'buffer',
     })
   }
 
