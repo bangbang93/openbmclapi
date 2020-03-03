@@ -49,6 +49,7 @@ export class Cluster {
       responseType: 'buffer',
     })
     this.io = io.connect(`${this.prefixUrl}`, {
+      transports: ['websocket'],
       query: {
         clusterId: this.clusterId, clusterSecret: this.clusterSecret,
       },
