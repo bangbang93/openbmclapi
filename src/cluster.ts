@@ -30,7 +30,7 @@ export class Cluster {
   public constructor(
     private readonly clusterId: string,
     private readonly clusterSecret: string,
-    version: string,
+    private readonly version: string,
   ) {
     if (!clusterId || !clusterSecret) throw new Error('missing config')
     this.host = process.env.CLUSTER_IP
@@ -119,6 +119,7 @@ export class Cluster {
       json: {
         host: this.host,
         port: this.publicPort,
+        version: this.version,
       },
     })
   }
