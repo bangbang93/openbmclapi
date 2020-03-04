@@ -3,20 +3,28 @@ import * as colors from 'colors/safe'
 import * as express from 'express'
 // eslint-disable-next-line no-duplicate-imports
 import {NextFunction, Request, Response} from 'express'
-import {outputFile, pathExists} from 'fs-extra'
+import {outputFile, pathExists, stat} from 'fs-extra'
 import got, {Got} from 'got'
 import {createServer, Server} from 'http'
 import {join} from 'path'
 import * as ProgressBar from 'progress'
 import * as io from 'socket.io-client'
 import morgan = require('morgan')
+import clone = require('lodash.clone')
 import Socket = SocketIOClient.Socket
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
 }
 
+interface ICounters {
+  hits: number
+  bytes: number
+}
+
 export class Cluster {
+  public readonly counters: ICounters = {hits: 0, bytes: 0}
+
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
@@ -111,6 +119,9 @@ export class Cluster {
         if (name) {
           res.attachment(name)
         }
+        const stats = await stat(path)
+        this.counters.bytes += stats.size
+        this.counters.hits++
         return res.sendFile(path)
       } catch (err) {
         return next(err)
@@ -162,7 +173,13 @@ export class Cluster {
 
   public async keepAlive(): Promise<boolean> {
     return new Promise((resolve) => {
-      this.io.emit('keep-alive', new Date(), (date) => {
+      const counters = clone(this.counters)
+      this.io.emit('keep-alive', {
+        time: new Date(),
+        counters,
+      }, (date) => {
+        this.counters.hits -= counters.hits
+        this.counters.bytes -= counters.bytes
         resolve(date)
       })
     })
