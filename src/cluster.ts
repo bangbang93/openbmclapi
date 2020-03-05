@@ -1,21 +1,34 @@
 import * as Bluebird from 'bluebird'
 import * as colors from 'colors/safe'
-import * as express from 'express'
 // eslint-disable-next-line no-duplicate-imports
+import * as express from 'express'
 import {NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists} from 'fs-extra'
 import got, {Got} from 'got'
 import {createServer, Server} from 'http'
 import {join} from 'path'
 import * as ProgressBar from 'progress'
+import * as io from 'socket.io-client'
+import clone = require('lodash.clone')
 import morgan = require('morgan')
 import ms = require('ms')
+import Timeout = NodeJS.Timeout
+import Socket = SocketIOClient.Socket
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
 }
 
+interface ICounters {
+  hits: number
+  bytes: number
+}
+
 export class Cluster {
+  public readonly counters: ICounters = {hits: 0, bytes: 0}
+  public isEnabled = false
+  public keepAliveInterval: Timeout
+
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
@@ -24,6 +37,7 @@ export class Cluster {
   private readonly ua: string
   private readonly got: Got
   private readonly requestCache = new Map()
+  private readonly io: Socket
 
   private server: Server
 
@@ -45,6 +59,12 @@ export class Cluster {
         'user-agent': this.ua,
       },
       responseType: 'buffer',
+    })
+    this.io = io.connect(`${this.prefixUrl}`, {
+      transports: ['websocket'],
+      query: {
+        clusterId: this.clusterId, clusterSecret: this.clusterSecret,
+      },
     })
   }
 
@@ -99,7 +119,11 @@ export class Cluster {
         if (name) {
           res.attachment(name)
         }
-        return res.sendFile(path)
+        return res.sendFile(path, (err) => {
+          if (err) return next(err)
+          this.counters.bytes += Number(res.getHeader('content-length'))
+          this.counters.hits++
+        })
       } catch (err) {
         return next(err)
       }
@@ -116,17 +140,31 @@ export class Cluster {
   }
 
   public async enable(): Promise<void> {
-    await this.got.post('openbmclapi/enable', {
-      json: {
-        host: this.host,
-        port: this.publicPort,
-        version: this.version,
-      },
+    if (this.isEnabled) return
+    if (this.io.connected) {
+      await this._enable()
+    }
+    this.io.on('connect', async () => {
+      console.log('connected')
+      await this._enable()
+      this.isEnabled = true
     })
+    this.io.on('message', (msg) => console.log(msg))
+    this.io.on('disconnect', () => {
+      console.log('disconnect')
+      this.isEnabled = false
+    })
+    this.io.on('error', (err) => console.error(err))
   }
 
   public async disable(): Promise<void> {
-    await this.got.post('openbmclapi/disable')
+    return new Promise((resolve, reject) => {
+      this.io.emit('disable', null, (ack) => {
+        if (ack !== true) return reject(ack)
+        this.io.disconnect()
+        resolve()
+      })
+    })
   }
 
   public async downloadFile(hash: string): Promise<void> {
@@ -140,10 +178,44 @@ export class Cluster {
   }
 
   public async keepAlive(): Promise<boolean> {
-    const res = await this.got.post('openbmclapi/keep-alive', {
-      timeout: ms('10s'),
-      throwHttpErrors: false,
+    return new Promise((resolve) => {
+      const counters = clone(this.counters)
+      this.io.emit('keep-alive', {
+        time: new Date(),
+        ...counters,
+      }, (date) => {
+        this.counters.hits -= counters.hits
+        this.counters.bytes -= counters.bytes
+        resolve(date)
+      })
     })
-    return res.statusCode < 400
+  }
+
+  private async _enable(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.io.emit('enable', {
+        host: this.host,
+        port: this.publicPort,
+        version: this.version,
+      }, (ack) => {
+        if (ack !== true) return reject(ack)
+        resolve()
+        this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
+      })
+    })
+  }
+
+  private async _keepAlive(): Promise<void> {
+    try {
+      const status = await this.keepAlive()
+      if (!status) {
+        console.log('kicked by server')
+        process.exit(1)
+      }
+    } catch (e) {
+      console.error('keep alive error')
+      console.error(e)
+    }
+    this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
   }
 }
