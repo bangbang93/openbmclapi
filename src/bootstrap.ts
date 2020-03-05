@@ -25,21 +25,6 @@ export async function bootstrap(version: string): Promise<void> {
   }
   console.log(colors.rainbow(`done, serving ${files.files.length} files`))
 
-  let keepAliveInterval = setTimeout(keepAlive, ms('1m'))
-  async function keepAlive(): Promise<void> {
-    try {
-      const status = await cluster.keepAlive()
-      if (!status) {
-        console.log('kicked by server')
-        process.exit(1)
-      }
-    } catch (e) {
-      console.error('keep alive error')
-      console.error(e)
-    }
-    keepAliveInterval = setTimeout(keepAlive, ms('1m'))
-  }
-
   let checkFileInterval = setTimeout(checkFile, ms('10m'))
   async function checkFile(): Promise<void> {
     console.log(colors.gray('refresh files'))
@@ -53,7 +38,7 @@ export async function bootstrap(version: string): Promise<void> {
     if (stopping) process.exit(0)
     stopping = true
     await cluster.disable()
-    clearInterval(keepAliveInterval)
+    clearInterval(cluster.keepAliveInterval)
     clearInterval(checkFileInterval)
 
     // eslint-disable-next-line no-console

@@ -12,6 +12,8 @@ import * as io from 'socket.io-client'
 import morgan = require('morgan')
 import clone = require('lodash.clone')
 import Socket = SocketIOClient.Socket
+import Timeout = NodeJS.Timeout
+import ms = require('ms')
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -25,6 +27,7 @@ interface ICounters {
 export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}
   public isEnabled = false
+  public keepAliveInterval: Timeout
 
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(__dirname, '..', 'cache')
@@ -187,7 +190,7 @@ export class Cluster {
     })
   }
 
-  private async _enable() {
+  private async _enable(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.io.emit('enable', {
         host: this.host,
@@ -196,7 +199,22 @@ export class Cluster {
       }, (ack) => {
         if (ack !== true) return reject(ack)
         resolve()
+        this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
       })
     })
+  }
+
+  private async _keepAlive(): Promise<void> {
+    try {
+      const status = await this.keepAlive()
+      if (!status) {
+        console.log('kicked by server')
+        process.exit(1)
+      }
+    } catch (e) {
+      console.error('keep alive error')
+      console.error(e)
+    }
+    this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
   }
 }
