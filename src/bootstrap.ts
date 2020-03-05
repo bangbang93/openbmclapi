@@ -1,5 +1,4 @@
 import * as colors from 'colors/safe'
-import * as got from 'got'
 import {Cluster} from './cluster'
 import ms = require('ms')
 
@@ -21,9 +20,6 @@ export async function bootstrap(version: string): Promise<void> {
   try {
     await cluster.enable()
   } catch (e) {
-    if (e instanceof got.HTTPError) {
-      console.error(e.response.body)
-    }
     console.error(e)
     process.exit(1)
   }

@@ -24,6 +24,7 @@ interface ICounters {
 
 export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}
+  public isEnabled = false
 
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(__dirname, '..', 'cache')
@@ -62,10 +63,6 @@ export class Cluster {
         clusterId: this.clusterId, clusterSecret: this.clusterSecret,
       },
     })
-    this.io.on('connect', () => console.log('connected'))
-    this.io.on('message', (msg) => console.log(msg))
-    this.io.on('disconnect', () => console.log('disconnect'))
-    this.io.on('error', (err) => console.error(err))
   }
 
   public async getFileList(): Promise<IFileList> {
@@ -139,16 +136,21 @@ export class Cluster {
   }
 
   public async enable(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.io.emit('enable', {
-        host: this.host,
-        port: this.publicPort,
-        version: this.version,
-      }, (ack) => {
-        if (ack !== true) return reject(ack)
-        resolve()
-      })
+    if (this.isEnabled) return
+    if (this.io.connected) {
+      await this._enable()
+    }
+    this.io.on('connect', async () => {
+      console.log('connected')
+      await this._enable()
+      this.isEnabled = true
     })
+    this.io.on('message', (msg) => console.log(msg))
+    this.io.on('disconnect', () => {
+      console.log('disconnect')
+      this.isEnabled = false
+    })
+    this.io.on('error', (err) => console.error(err))
   }
 
   public async disable(): Promise<void> {
@@ -181,6 +183,19 @@ export class Cluster {
         this.counters.hits -= counters.hits
         this.counters.bytes -= counters.bytes
         resolve(date)
+      })
+    })
+  }
+
+  private async _enable() {
+    return new Promise((resolve, reject) => {
+      this.io.emit('enable', {
+        host: this.host,
+        port: this.publicPort,
+        version: this.version,
+      }, (ack) => {
+        if (ack !== true) return reject(ack)
+        resolve()
       })
     })
   }
