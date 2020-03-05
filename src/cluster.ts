@@ -1,19 +1,19 @@
 import * as Bluebird from 'bluebird'
 import * as colors from 'colors/safe'
-import * as express from 'express'
 // eslint-disable-next-line no-duplicate-imports
+import * as express from 'express'
 import {NextFunction, Request, Response} from 'express'
-import {outputFile, pathExists, stat} from 'fs-extra'
+import {outputFile, pathExists} from 'fs-extra'
 import got, {Got} from 'got'
 import {createServer, Server} from 'http'
 import {join} from 'path'
 import * as ProgressBar from 'progress'
 import * as io from 'socket.io-client'
-import morgan = require('morgan')
 import clone = require('lodash.clone')
-import Socket = SocketIOClient.Socket
-import Timeout = NodeJS.Timeout
+import morgan = require('morgan')
 import ms = require('ms')
+import Timeout = NodeJS.Timeout
+import Socket = SocketIOClient.Socket
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -119,10 +119,11 @@ export class Cluster {
         if (name) {
           res.attachment(name)
         }
-        const stats = await stat(path)
-        this.counters.bytes += stats.size
-        this.counters.hits++
-        return res.sendFile(path)
+        return res.sendFile(path, (err) => {
+          if (err) return next(err)
+          this.counters.bytes += Number(res.getHeader('content-length'))
+          this.counters.hits++
+        })
       } catch (err) {
         return next(err)
       }
