@@ -1,7 +1,7 @@
 import * as Bluebird from 'bluebird'
 import * as colors from 'colors/safe'
-// eslint-disable-next-line no-duplicate-imports
 import * as express from 'express'
+// eslint-disable-next-line no-duplicate-imports
 import {NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists} from 'fs-extra'
 import got, {Got} from 'got'
