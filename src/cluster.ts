@@ -178,7 +178,7 @@ export class Cluster {
       const counters = clone(this.counters)
       this.io.emit('keep-alive', {
         time: new Date(),
-        counters,
+        ...counters,
       }, (date) => {
         this.counters.hits -= counters.hits
         this.counters.bytes -= counters.bytes
