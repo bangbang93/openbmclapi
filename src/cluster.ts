@@ -207,7 +207,7 @@ export class Cluster {
 
   private async _keepAlive(): Promise<void> {
     try {
-      const status = await this.keepAlive()
+      const status = await Bluebird.try(async () => this.keepAlive()).timeout(ms('10s'))
       if (!status) {
         console.log('kicked by server')
         process.exit(1)
@@ -215,7 +215,8 @@ export class Cluster {
     } catch (e) {
       console.error('keep alive error')
       console.error(e)
+    } finally {
+      this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
     }
-    this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
   }
 }
