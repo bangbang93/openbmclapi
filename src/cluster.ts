@@ -66,6 +66,7 @@ export class Cluster {
         clusterId: this.clusterId, clusterSecret: this.clusterSecret,
       },
     })
+    this.io.on('connect', () => console.log('connected'))
   }
 
   public async getFileList(): Promise<IFileList> {
@@ -143,9 +144,9 @@ export class Cluster {
     if (this.isEnabled) return
     if (this.io.connected) {
       await this._enable()
+      this.isEnabled = true
     }
     this.io.on('connect', async () => {
-      console.log('connected')
       await this._enable()
       this.isEnabled = true
     })
