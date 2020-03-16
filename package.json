@@ -3,6 +3,7 @@
   "version": "0.2.2",
   "description": "openbmclapi",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf dist && tsc"
@@ -47,5 +48,8 @@
     "eslint": "^6.1.0",
     "ts-node": "^8.3.0",
     "typescript": "^3.5.3"
+  },
+  "npm": {
+    "publish": false
   }
 }
