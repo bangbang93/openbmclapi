@@ -37,7 +37,7 @@ export class Cluster {
   private readonly ua: string
   private readonly got: Got
   private readonly requestCache = new Map()
-  private readonly io: Socket
+  private io: Socket
 
   private server: Server
 
@@ -60,13 +60,6 @@ export class Cluster {
       },
       responseType: 'buffer',
     })
-    this.io = io.connect(`${this.prefixUrl}`, {
-      transports: ['websocket'],
-      query: {
-        clusterId: this.clusterId, clusterSecret: this.clusterSecret,
-      },
-    })
-    this.io.on('connect', () => console.log('connected'))
   }
 
   public async getFileList(): Promise<IFileList> {
@@ -142,11 +135,14 @@ export class Cluster {
 
   public async enable(): Promise<void> {
     if (this.isEnabled) return
-    if (this.io.connected) {
-      await this._enable()
-      this.isEnabled = true
-    }
+    this.io = io.connect(`${this.prefixUrl}`, {
+      transports: ['websocket'],
+      query: {
+        clusterId: this.clusterId, clusterSecret: this.clusterSecret,
+      },
+    })
     this.io.on('connect', async () => {
+      console.log('connected')
       await this._enable()
       this.isEnabled = true
     })
