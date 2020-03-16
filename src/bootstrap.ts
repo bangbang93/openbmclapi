@@ -1,6 +1,7 @@
 import * as colors from 'colors/safe'
 import {Cluster} from './cluster'
 import ms = require('ms')
+import Signals = NodeJS.Signals
 
 export async function bootstrap(version: string): Promise<void> {
   if (!process.env.CLUSTER_PORT) {
@@ -34,12 +35,14 @@ export async function bootstrap(version: string): Promise<void> {
   }
 
   let stopping = false
-  const onStop = async (): Promise<void> => {
+  const onStop = async (signal: Signals): Promise<void> => {
+    console.log(`got ${signal}, unregistering cluster`)
     if (stopping) process.exit(0)
+
     stopping = true
+    clearTimeout(cluster.keepAliveInterval)
+    clearTimeout(checkFileInterval)
     await cluster.disable()
-    clearInterval(cluster.keepAliveInterval)
-    clearInterval(checkFileInterval)
 
     // eslint-disable-next-line no-console
     console.log('unregister success, waiting for background task, ctrl+c again to force kill')
