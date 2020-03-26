@@ -152,6 +152,10 @@ export class Cluster {
       this.isEnabled = false
     })
     this.io.on('error', (err) => console.error(err))
+    this.io.on('connect_error', this.onConnectionError)
+    this.io.on('reconnect_error', this.onConnectionError)
+    this.io.on('connect_timeout', this.onConnectionError)
+    this.io.on('reconnect_timeout', this.onConnectionError)
   }
 
   public async disable(): Promise<void> {
@@ -217,5 +221,12 @@ export class Cluster {
     } finally {
       this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
     }
+  }
+
+  private async onConnectionError(err): Promise<void> {
+    console.error('cannot connect to server', err)
+    this.server.close(() => {
+      process.exit(1)
+    })
   }
 }
