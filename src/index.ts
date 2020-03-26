@@ -1,3 +1,4 @@
+import 'source-map-support'
 import {config} from 'dotenv'
 import {bootstrap} from './bootstrap'
 import * as fs from 'fs'
