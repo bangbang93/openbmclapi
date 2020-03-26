@@ -175,12 +175,13 @@ export class Cluster {
   }
 
   public async keepAlive(): Promise<boolean> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const counters = clone(this.counters)
       this.io.emit('keep-alive', {
         time: new Date(),
         ...counters,
-      }, (date) => {
+      }, ([err, date]) => {
+        if (err) return reject(err)
         this.counters.hits -= counters.hits
         this.counters.bytes -= counters.bytes
         resolve(date)
@@ -194,7 +195,8 @@ export class Cluster {
         host: this.host,
         port: this.publicPort,
         version: this.version,
-      }, (ack) => {
+      }, ([err, ack]) => {
+        if (err) return reject(err)
         if (ack !== true) return reject(ack)
         resolve()
         this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
