@@ -188,7 +188,7 @@ export class Cluster {
       this.io.emit('keep-alive', {
         time: new Date(),
         ...counters,
-      }, (err, date) => {
+      }, ([err, date]) => {
         if (err) return reject(err)
         this.counters.hits -= counters.hits
         this.counters.bytes -= counters.bytes
@@ -203,7 +203,7 @@ export class Cluster {
         host: this.host,
         port: this.publicPort,
         version: this.version,
-      }, (err, ack) => {
+      }, ([err, ack]) => {
         if (err) return reject(err)
         if (ack !== true) return reject(ack)
         resolve()
