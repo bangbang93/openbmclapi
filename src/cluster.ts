@@ -188,7 +188,7 @@ export class Cluster {
       this.io.emit('keep-alive', {
         time: new Date(),
         ...counters,
-      }, ([err, date]) => {
+      }, (err, date) => {
         if (err) return reject(err)
         this.counters.hits -= counters.hits
         this.counters.bytes -= counters.bytes
