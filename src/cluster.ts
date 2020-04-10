@@ -143,7 +143,11 @@ export class Cluster {
     })
     this.io.on('connect', async () => {
       console.log('connected')
-      await this._enable()
+      try {
+        await this._enable()
+      } catch (e) {
+        console.error(e)
+      }
       this.isEnabled = true
     })
     this.io.on('message', (msg) => console.log(msg))
@@ -199,7 +203,7 @@ export class Cluster {
         host: this.host,
         port: this.publicPort,
         version: this.version,
-      }, ([err, ack]) => {
+      }, (err, ack) => {
         if (err) return reject(err)
         if (ack !== true) return reject(ack)
         resolve()
