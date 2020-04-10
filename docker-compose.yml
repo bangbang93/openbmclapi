@@ -12,3 +12,8 @@ services:
     ports:
     - 4000:4000
     restart: always
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: 100m
+        max-file: 10
