@@ -229,8 +229,12 @@ export class Cluster {
 
   private async onConnectionError(err): Promise<void> {
     console.error('cannot connect to server', err)
-    this.server.close(() => {
+    if (this.server) {
+      this.server.close(() => {
+        process.exit(1)
+      })
+    } else {
       process.exit(1)
-    })
+    }
   }
 }
