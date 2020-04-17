@@ -113,7 +113,7 @@ export class Cluster {
         if (name) {
           res.attachment(name)
         }
-        return res.sendFile(path, (err) => {
+        return res.sendFile(path, {maxAge: '30d'}, (err) => {
           if (err) return next(err)
           this.counters.bytes += Number(res.getHeader('content-length'))
           this.counters.hits++
