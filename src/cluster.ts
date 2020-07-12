@@ -151,8 +151,8 @@ export class Cluster {
       this.isEnabled = true
     })
     this.io.on('message', (msg) => console.log(msg))
-    this.io.on('disconnect', () => {
-      console.log('disconnect')
+    this.io.on('disconnect', (reason: string) => {
+      console.log(`disconnected: ${reason}`)
       this.isEnabled = false
       clearTimeout(this.keepAliveInterval)
     })
