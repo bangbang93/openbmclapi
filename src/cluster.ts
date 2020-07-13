@@ -29,6 +29,7 @@ export class Cluster {
   public isEnabled = false
   public keepAliveInterval: Timeout
 
+  private keepAliveError = 0
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
@@ -166,6 +167,7 @@ export class Cluster {
   public async disable(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.io.emit('disable', null, (ack) => {
+        this.isEnabled = false
         if (ack !== true) return reject(ack)
         this.io.disconnect()
         resolve()
@@ -220,9 +222,23 @@ export class Cluster {
         console.log('kicked by server')
         process.exit(1)
       }
+      this.keepAliveError = 0
     } catch (e) {
+      this.keepAliveError++
       console.error('keep alive error')
       console.error(e)
+      if (this.keepAliveError >= 5) {
+        console.error('exit')
+        await Bluebird.try(async () => {
+          await this.disable()
+          await this.enable()
+        })
+          .timeout(ms('30s'))
+          .catch((e) => {
+            console.error(e, 'restart failed')
+            process.exit(1)
+          })
+      }
     } finally {
       this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
     }
