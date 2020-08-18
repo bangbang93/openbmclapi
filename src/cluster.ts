@@ -3,7 +3,7 @@ import * as colors from 'colors/safe'
 import * as express from 'express'
 // eslint-disable-next-line no-duplicate-imports
 import {NextFunction, Request, Response} from 'express'
-import {outputFile, pathExists} from 'fs-extra'
+import {outputFile, pathExists, readdir, stat, unlink} from 'fs-extra'
 import got, {Got} from 'got'
 import {createServer, Server} from 'http'
 import {join} from 'path'
@@ -97,6 +97,7 @@ export class Cluster {
         })
       await outputFile(path, res.body)
     }
+    await this.gc(fileList)
   }
 
   public setupExpress(): Server {
@@ -181,7 +182,7 @@ export class Cluster {
       searchParams: {noopen: 1},
     })
 
-    const path = join(this.cacheDir, hash.substr(0, 2), hash)
+    const path = join(this.cacheDir, this.hashToFilename(hash))
     await outputFile(path, res.body)
   }
 
@@ -253,5 +254,33 @@ export class Cluster {
     } else {
       process.exit(1)
     }
+  }
+
+  private async gc(fileList: IFileList): Promise<void> {
+    const fileSet = new Set<string>()
+    for (const file of fileList.files) {
+      fileSet.add(`/${this.hashToFilename(file.hash)}`)
+    }
+    const queue = [this.cacheDir]
+    do {
+      const dir = queue.pop()
+      const entries = await readdir(dir)
+      for (const entry of entries) {
+        const p = join(dir, entry)
+        const s = await stat(p)
+        if (s.isDirectory()) {
+          queue.push(p)
+          continue
+        }
+        if (!fileSet.has(p.replace(this.cacheDir, ''))) {
+          console.log(colors.gray(`delete expire file: ${p}`))
+          await unlink(p)
+        }
+      }
+    } while (queue.length !== 0)
+  }
+
+  private hashToFilename(hash: string): string {
+    return join(hash.substr(0, 2), hash)
   }
 }
