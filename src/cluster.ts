@@ -158,7 +158,7 @@ export class Cluster {
       this.isEnabled = false
       clearTimeout(this.keepAliveInterval)
     })
-    this.io.on('error', (err) => console.error(err))
+    this.io.on('error', this.onConnectionError)
     this.io.on('connect_error', this.onConnectionError)
     this.io.on('reconnect_error', this.onConnectionError)
     this.io.on('connect_timeout', this.onConnectionError)
