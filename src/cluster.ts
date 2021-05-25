@@ -147,10 +147,11 @@ export class Cluster {
       console.log('connected')
       try {
         await this._enable()
+        this.isEnabled = true
       } catch (e) {
         console.error(e)
+        process.exit(1)
       }
-      this.isEnabled = true
     })
     this.io.on('message', (msg) => console.log(msg))
     this.io.on('disconnect', (reason: string) => {
@@ -222,6 +223,8 @@ export class Cluster {
       if (!status) {
         console.log('kicked by server')
         process.exit(1)
+      } else {
+        console.log('keep alive success')
       }
       this.keepAliveError = 0
     } catch (e) {
