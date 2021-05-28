@@ -3,8 +3,8 @@ services:
   openbmclapi:
     image: bangbang93/openbmclapi
     environment:
-      CLUSTER_ID: ''
-      CLUSTER_SECRET: ''
+      CLUSTER_ID: ${CLUSTER_ID}
+      CLUSTER_SECRET: ${CLUSTER_SECRET}
       CLUSTER_PUBLIC_PORT: 4000
 #      CLUSTER_IP: ''
     volumes:
