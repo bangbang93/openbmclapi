@@ -262,7 +262,7 @@ export class Cluster {
   private async gc(fileList: IFileList): Promise<void> {
     const fileSet = new Set<string>()
     for (const file of fileList.files) {
-      fileSet.add(`${this.hashToFilename(file.hash)}`)
+      fileSet.add(this.hashToFilename(file.hash))
     }
     const queue = [this.cacheDir]
     do {
