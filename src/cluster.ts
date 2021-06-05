@@ -6,7 +6,7 @@ import {NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists, readdir, stat, unlink} from 'fs-extra'
 import got, {Got} from 'got'
 import {createServer, Server} from 'http'
-import {join} from 'path'
+import {join, sep} from 'path'
 import * as ProgressBar from 'progress'
 import * as io from 'socket.io-client'
 import clone = require('lodash.clone')
@@ -262,7 +262,7 @@ export class Cluster {
   private async gc(fileList: IFileList): Promise<void> {
     const fileSet = new Set<string>()
     for (const file of fileList.files) {
-      fileSet.add(`/${this.hashToFilename(file.hash)}`)
+      fileSet.add(`${this.hashToFilename(file.hash)}`)
     }
     const queue = [this.cacheDir]
     do {
@@ -275,7 +275,8 @@ export class Cluster {
           queue.push(p)
           continue
         }
-        if (!fileSet.has(p.replace(this.cacheDir, ''))) {
+        const cacheDirWithSep = this.cacheDir + sep
+        if (!fileSet.has(p.replace(cacheDirWithSep, ''))) {
           console.log(colors.gray(`delete expire file: ${p}`))
           await unlink(p)
         }
