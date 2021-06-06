@@ -14,7 +14,10 @@ docker run -d \
 -p ${CLUSTER_PORT}:4000 \
 --restart always \
 bangbang93/openbmclapi
-
+```
+若无法访问docker hub registry，可以使用国内镜像
+```bash
+docker pull registry.bangbang93.com/bmclapi/openbmclapi
 ```
 
 若要使用不同端口，请添加CLUSTER_PUBLIC_PORT环境变量以修改上报端口
@@ -50,4 +53,4 @@ CLUSTER_ID和CLUSTER_SECRET请联系我获取
 如果配置无误的话，就会开始拉取文件，拉取完成后就会开始等待服务器分发请求了
 ### 同步数据
 openbmclapi会自行同步需要的文件，但是初次同步可能会速度过慢，如果您的节点是个全量节点，可以通过以下命令使用rsync快速同步
-`rsync -azvP openbmclapi@jp.bmclapi.933.moe::openbmclapi cache`
+~~`rsync -azvP openbmclapi@jp.bmclapi.933.moe::openbmclapi cache`~~ 由于没有空闲节点，该命令暂时不可用
