@@ -1,0 +1,18 @@
+stages:
+  - deploy
+
+docker:
+  stage: deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  only: [master]
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE || true
+    - docker build --cache-from=$CI_REGISTRY_IMAGE -t $CI_REGISTRY_IMAGE .
+    - docker push $CI_REGISTRY_IMAGE
