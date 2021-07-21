@@ -1,7 +1,7 @@
 {
   "name": "openbmclapi",
-  "version": "0.3.4",
-  "description": "openbmclapi",
+  "version": "0.3.5",
+  "description": "bmclapi@home",
   "main": "index.js",
   "private": true,
   "scripts": {
