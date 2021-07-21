@@ -231,6 +231,7 @@ export class Cluster {
       this.keepAliveError++
       console.error('keep alive error')
       console.error(e)
+      console.log(this.io)
       if (this.keepAliveError >= 5) {
         console.error('exit')
       } else {
