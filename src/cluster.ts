@@ -233,6 +233,7 @@ export class Cluster {
       console.error(e)
       if (this.keepAliveError >= 5) {
         console.error('exit')
+      } else {
         await Bluebird.try(async () => {
           await this.disable()
           await this.enable()
