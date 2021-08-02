@@ -44,9 +44,9 @@
     "@types/node": "^12.6.9",
     "@types/progress": "^2.0.3",
     "@types/socket.io-client": "^1.4.32",
-    "@typescript-eslint/eslint-plugin": "^1.13.0",
-    "@typescript-eslint/parser": "^1.13.0",
-    "eslint": "^6.1.0",
+    "@typescript-eslint/eslint-plugin": "^4.28.5",
+    "@typescript-eslint/parser": "^4.28.5",
+    "eslint": "^7.32.0",
     "ts-node": "^8.3.0",
     "typescript": "^3.8.3"
   },
