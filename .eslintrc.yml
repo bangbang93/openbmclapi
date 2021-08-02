@@ -13,7 +13,6 @@ parserOptions:
 rules:
   array-bracket-newline: [error, consistent]
   array-bracket-spacing: [error, never]
-  array-element-newline: [error, consistent]
   array-callback-return: error
   arrow-parens: [error, always]
   arrow-spacing: error
@@ -53,18 +52,16 @@ rules:
   no-array-constructor: error
   no-buffer-constructor: error
   no-caller: error
-#  no-console: error
+  no-console: error
   no-div-regex: warn
   no-duplicate-imports: [error]
   no-extra-bind: error
   no-extra-label: error
-  no-else-return: error
   no-floating-decimal: error
   no-implied-eval: error
   no-invalid-this: error
   no-label-var: error
   no-lone-blocks: error
-  no-lonely-if: error
   no-loop-func: error
   no-mixed-requires: error
   no-multiple-empty-lines: [error, {maxEOF: 1, maxBOF: 0, max: 2}]
@@ -89,7 +86,7 @@ rules:
   no-useless-return: error
   no-useless-rename: error
   no-var: error
-  no-void: error
+  no-void: [error, {allowAsStatement: true}]
   no-whitespace-before-property: error
   object-curly-newline: [error, {consistent: true}]
   object-curly-spacing: [error, never]
@@ -128,9 +125,7 @@ rules:
   '@typescript-eslint/consistent-type-definitions': [error, interface]
   '@typescript-eslint/explicit-function-return-type': [warn, {allowExpressions: true}]
   '@typescript-eslint/func-call-spacing': [error, never]
-  '@typescript-eslint/generic-type-naming': error
   '@typescript-eslint/indent': [error, 2]
-  '@typescript-eslint/interface-name-prefix': [error, always]
   '@typescript-eslint/member-delimiter-style':
     - error
     - multiline:
@@ -140,17 +135,16 @@ rules:
         delimiter: semi
         requireLast: false
   '@typescript-eslint/member-ordering': error
-  #  '@typescript-eslint/no-extraneous-class': error
   '@typescript-eslint/no-extra-parens': warn
   '@typescript-eslint/no-floating-promises': warn
   '@typescript-eslint/no-for-in-array': error
+  '@typescript-eslint/no-inferrable-types': off
   '@typescript-eslint/no-magic-numbers':
     - warn
-    - ignore: [-1, 0, 1]
+    - ignore: [-1, 0, 1, 100, 60, 1024]
       ignoreEnums: true
       ignoreNumericLiteralTypes: true
       ignoreArrayIndexes: true
-  #  '@typescript-eslint/no-misused-promises': error
   '@typescript-eslint/no-parameter-properties': off
   '@typescript-eslint/no-this-alias': error
   '@typescript-eslint/no-use-before-define': [error, {functions: false, typedefs: false}]
@@ -159,9 +153,10 @@ rules:
   '@typescript-eslint/prefer-for-of': error
   '@typescript-eslint/prefer-function-type': error
   '@typescript-eslint/prefer-includes': error
+  '@typescript-eslint/prefer-nullish-coalescing': warn
+  '@typescript-eslint/prefer-optional-chain': error
   '@typescript-eslint/prefer-string-starts-ends-with': error
-  '@typescript-eslint/promise-function-async': [error, {allowAny: true}]
+  '@typescript-eslint/promise-function-async': [error, {allowAny: true, checkArrowFunctions: false}]
   '@typescript-eslint/restrict-plus-operands': error
   '@typescript-eslint/semi': [error, never]
-  #  '@typescript-eslint/unbound-method': error
   '@typescript-eslint/unified-signatures': error
