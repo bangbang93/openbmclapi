@@ -52,7 +52,7 @@ rules:
   no-array-constructor: error
   no-buffer-constructor: error
   no-caller: error
-  no-console: error
+#  no-console: error
   no-div-regex: warn
   no-duplicate-imports: [error]
   no-extra-bind: error

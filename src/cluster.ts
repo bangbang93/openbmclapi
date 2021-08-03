@@ -111,7 +111,7 @@ export class Cluster {
         if (!await pathExists(path)) {
           await this.downloadFile(hash)
         }
-        const name = req.query.name
+        const name = req.query.name as string
         if (name) {
           res.attachment(name)
         }
