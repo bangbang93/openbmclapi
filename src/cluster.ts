@@ -106,7 +106,7 @@ export class Cluster {
     if (process.env.DISABLE_ACCESS_LOG === 'true') {
       app.use(morgan('combined'))
     }
-    app.use('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
+    app.get('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
       try {
         const hash = req.params.hash
         const path = join(this.cacheDir, hash.substr(0, 2), hash)
