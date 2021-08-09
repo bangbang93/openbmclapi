@@ -103,7 +103,9 @@ export class Cluster {
   public setupExpress(): Server {
     const app = express()
     app.enable('trust proxy')
-    app.use(morgan('combined'))
+    if (process.env.DISABLE_ACCESS_LOG === 'true') {
+      app.use(morgan('combined'))
+    }
     app.use('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
       try {
         const hash = req.params.hash
