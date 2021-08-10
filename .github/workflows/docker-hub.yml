@@ -1,0 +1,17 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag bangbang93/openbmclapi
+      - name: Login to docker hub
+        run: docker login -u {{HUB_USERNAME}} -p {{HUB_PASSWORD}}
+      - name: Publish image
+        run: docker push bangbang93/openbmclapi
