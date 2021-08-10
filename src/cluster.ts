@@ -1,8 +1,6 @@
 import * as Bluebird from 'bluebird'
 import * as colors from 'colors/safe'
 import * as express from 'express'
-// eslint-disable-next-line no-duplicate-imports
-import {NextFunction, Request, Response} from 'express'
 import {outputFile, pathExists, readdir, stat, unlink} from 'fs-extra'
 import got, {Got} from 'got'
 import {createServer, Server} from 'http'
@@ -14,6 +12,9 @@ import morgan = require('morgan')
 import ms = require('ms')
 import Timeout = NodeJS.Timeout
 import Socket = SocketIOClient.Socket
+import NextFunction = express.NextFunction
+import Request = express.Request
+import Response = express.Response
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
