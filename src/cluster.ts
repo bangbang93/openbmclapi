@@ -145,6 +145,7 @@ export class Cluster {
       query: {
         clusterId: this.clusterId, clusterSecret: this.clusterSecret,
       },
+      reconnectionAttempts: 10,
     })
     this.io.on('connect', async () => {
       console.log('connected')
