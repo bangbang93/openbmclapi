@@ -1,4 +1,4 @@
-FROM node:12-alpine AS install
+FROM node:14-alpine AS install
 
 WORKDIR /opt/openbmclapi
 RUN apk add build-base
@@ -7,7 +7,7 @@ RUN npm ci
 ADD src .
 RUN npm run build
 
-FROM node:12-alpine AS build
+FROM node:14-alpine AS build
 
 WORKDIR /opt/openbmclapi
 ADD package-lock.json package.json ./
