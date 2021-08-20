@@ -1,4 +1,5 @@
 import * as colors from 'colors/safe'
+import {join} from 'path'
 import {Cluster} from './cluster'
 import ms = require('ms')
 import Signals = NodeJS.Signals
@@ -16,6 +17,10 @@ export async function bootstrap(version: string): Promise<void> {
   const files = await cluster.getFileList()
   console.log(colors.green(`${files.files.length} files`))
   await cluster.syncFiles(files)
+
+  if (process.env.ENABLE_NGINX) {
+    await cluster.setupNginx(join(__dirname, '..'), cluster.port)
+  }
   const server = cluster.setupExpress()
   await cluster.listen()
   try {
@@ -42,6 +47,9 @@ export async function bootstrap(version: string): Promise<void> {
     stopping = true
     clearTimeout(cluster.keepAliveInterval)
     clearTimeout(checkFileInterval)
+    if (cluster.interval) {
+      clearInterval(cluster.interval)
+    }
     await cluster.disable()
 
     // eslint-disable-next-line no-console

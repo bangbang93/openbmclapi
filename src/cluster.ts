@@ -1,20 +1,23 @@
 import * as Bluebird from 'bluebird'
+import {spawn} from 'child_process'
 import * as colors from 'colors/safe'
 import * as express from 'express'
-import {outputFile, pathExists, readdir, stat, unlink} from 'fs-extra'
+import {copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
 import got, {Got} from 'got'
 import {createServer, Server} from 'http'
-import {join, sep} from 'path'
+import {clone, template} from 'lodash'
+import {tmpdir} from 'os'
+import {dirname, join, sep} from 'path'
 import * as ProgressBar from 'progress'
+import {createInterface} from 'readline'
 import * as io from 'socket.io-client'
-import clone = require('lodash.clone')
 import morgan = require('morgan')
 import ms = require('ms')
-import Timeout = NodeJS.Timeout
-import Socket = SocketIOClient.Socket
 import NextFunction = express.NextFunction
 import Request = express.Request
 import Response = express.Response
+import Timeout = NodeJS.Timeout
+import Socket = SocketIOClient.Socket
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -29,12 +32,13 @@ export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}
   public isEnabled = false
   public keepAliveInterval: Timeout
+  public interval: Timeout
 
   private keepAliveError = 0
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(__dirname, '..', 'cache')
   private readonly host: string
-  private readonly port: number
+  private _port: number
   private readonly publicPort: number
   private readonly ua: string
   private readonly got: Got
@@ -43,6 +47,10 @@ export class Cluster {
 
   private server: Server
 
+  public get port() {
+    return this._port
+  }
+
   public constructor(
     private readonly clusterId: string,
     private readonly clusterSecret: string,
@@ -50,8 +58,8 @@ export class Cluster {
   ) {
     if (!clusterId || !clusterSecret) throw new Error('missing config')
     this.host = process.env.CLUSTER_IP
-    this.port = parseInt(process.env.CLUSTER_PORT, 10)
-    this.publicPort = parseInt(process.env.CLUSTER_PUBLIC_PORT, 10) || this.port
+    this._port = parseInt(process.env.CLUSTER_PORT, 10)
+    this.publicPort = parseInt(process.env.CLUSTER_PUBLIC_PORT, 10) || this._port
     this.ua = `openbmclapi-cluster/${version}`
     this.got = got.extend({
       prefixUrl: this.prefixUrl,
@@ -132,9 +140,51 @@ export class Cluster {
     return this.server
   }
 
+  public async setupNginx(pwd: string, appPort: number): Promise<void> {
+    this._port++
+    const dir = await mkdtemp(join(tmpdir(), 'openbmclapi'))
+    const confFile = `${dir}/nginx/nginx.conf`
+    const confTemplate = await readFile(join(__dirname, '..', 'nginx', 'nginx.conf'), 'utf8')
+    console.log('nginx conf', confFile)
+
+    await copy(join(__dirname, '..', 'nginx'), dirname(confFile), {recursive: true, overwrite: true})
+    await outputFile(confFile, template(confTemplate)({
+      root: pwd,
+      port: appPort,
+    }))
+
+    const logFile = join(__dirname, '..', 'access.log')
+    const logFd = await open(logFile, 'a')
+    await ftruncate(logFd)
+
+    spawn('nginx', ['-c', confFile], {
+      stdio: [null, logFd, 'inherit'],
+    })
+
+    const tail = spawn('tail', ['-f', logFile])
+    const rl = createInterface({
+      input: tail.stdout,
+    })
+
+    if (!process.env.DISABLE_ACCESS_LOG) {
+      tail.stdout.pipe(process.stdout)
+    }
+    // eslint-disable-next-line max-len
+    const logRegexp = /^(?<client>\S+) \S+ (?<userid>\S+) \[(?<datetime>[^\]]+)] "(?<method>[A-Z]+) (?<request>[^ "]+)? HTTP\/[0-9.]+" (?<status>[0-9]{3}) (?<size>[0-9]+|-) "(?<referrer>[^"]*)" "(?<useragent>[^"]*)"/
+    rl.on('line', (line: string) => {
+      const match = line.match(logRegexp)
+      this.counters.hits++
+      this.counters.bytes += parseInt(match.groups.size, 10)
+    })
+
+    this.interval = setInterval(async () => {
+      await ftruncate(logFd)
+    }, ms('60s'))
+  }
+
   public async listen(): Promise<void> {
     return new Promise((resolve) => {
-      this.server.listen(this.port, resolve)
+      this.server.listen(this._port, resolve)
     })
   }
 

@@ -9,9 +9,12 @@ RUN npm run build
 
 FROM node:14-alpine AS build
 
+RUN apk add nginx
+
 WORKDIR /opt/openbmclapi
 ADD package-lock.json package.json ./
 COPY --from=install /opt/openbmclapi/dist ./dist
+COPY nginx/ /opt/openbmclapi/nginx
 
 RUN npm ci --prod
 
