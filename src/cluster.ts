@@ -69,6 +69,7 @@ export class Cluster {
         'user-agent': this.ua,
       },
       responseType: 'buffer',
+      timeout: ms('1m'),
     })
   }
 
@@ -273,7 +274,7 @@ export class Cluster {
 
   private async _keepAlive(): Promise<void> {
     try {
-      const status = await Bluebird.try(async () => this.keepAlive()).timeout(ms('10s'))
+      const status = await Bluebird.try(async () => this.keepAlive()).timeout(ms('10s'), 'keep alive timeout')
       if (!status) {
         console.log('kicked by server')
         process.exit(1)
@@ -293,7 +294,7 @@ export class Cluster {
           await this.disable()
           await this.enable()
         })
-          .timeout(ms('30s'))
+          .timeout(ms('30s'), 'restart timeout')
           .catch((e) => {
             console.error(e, 'restart failed')
             process.exit(1)
