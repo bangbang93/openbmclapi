@@ -278,7 +278,7 @@ export class Cluster {
         resolve()
         this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
       })
-    }).timeout(ms('1m'), 'enable request timeout')
+    }).timeout(ms('2m'), 'enable request timeout')
   }
 
   private async _keepAlive(): Promise<void> {
