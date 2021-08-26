@@ -3,7 +3,7 @@ import {spawn} from 'child_process'
 import * as colors from 'colors/safe'
 import * as express from 'express'
 import {copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
-import got, {Got} from 'got'
+import got, {Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {clone, template} from 'lodash'
 import {tmpdir} from 'os'
@@ -133,6 +133,11 @@ export class Cluster {
           this.counters.hits++
         })
       } catch (err) {
+        if (err instanceof HTTPError) {
+          if (err.response.statusCode === 404) {
+            return next()
+          }
+        }
         return next(err)
       }
     })
