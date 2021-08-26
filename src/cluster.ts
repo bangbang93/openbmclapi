@@ -174,6 +174,10 @@ export class Cluster {
     const logRegexp = /^(?<client>\S+) \S+ (?<userid>\S+) \[(?<datetime>[^\]]+)] "(?<method>[A-Z]+) (?<request>[^ "]+)? HTTP\/[0-9.]+" (?<status>[0-9]{3}) (?<size>[0-9]+|-) "(?<referrer>[^"]*)" "(?<useragent>[^"]*)"/
     rl.on('line', (line: string) => {
       const match = line.match(logRegexp)
+      if (!match) {
+        console.log(`cannot parse nginx log: ${line}`)
+        return
+      }
       this.counters.hits++
       this.counters.bytes += parseInt(match.groups.size, 10)
     })
