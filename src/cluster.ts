@@ -11,6 +11,7 @@ import {dirname, join, sep} from 'path'
 import * as ProgressBar from 'progress'
 import {createInterface} from 'readline'
 import * as io from 'socket.io-client'
+import MeasureRoute from './measure.route'
 import morgan = require('morgan')
 import ms = require('ms')
 import NextFunction = express.NextFunction
@@ -141,6 +142,7 @@ export class Cluster {
         return next(err)
       }
     })
+    app.use('/measure', MeasureRoute)
     this.server = createServer(app)
 
     return this.server
@@ -278,7 +280,7 @@ export class Cluster {
         resolve()
         this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
       })
-    }).timeout(ms('2m'), 'enable request timeout')
+    }).timeout(ms('5m'), '节点注册超时')
   }
 
   private async _keepAlive(): Promise<void> {
