@@ -278,6 +278,7 @@ export class Cluster {
         if (err) return reject(err)
         if (ack !== true) return reject(ack)
         resolve()
+        console.log(colors.rainbow('start doing my job'))
         this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
       })
     }).timeout(ms('5m'), '节点注册超时')
