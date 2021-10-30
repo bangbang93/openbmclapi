@@ -8,6 +8,7 @@ import {createServer, Server} from 'http'
 import {clone, template} from 'lodash'
 import {tmpdir} from 'os'
 import {dirname, join, sep} from 'path'
+import {cwd} from 'process'
 import * as ProgressBar from 'progress'
 import {createInterface} from 'readline'
 import * as io from 'socket.io-client'
@@ -37,7 +38,7 @@ export class Cluster {
 
   private keepAliveError = 0
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
-  private readonly cacheDir = join(__dirname, '..', 'cache')
+  private readonly cacheDir = join(cwd(), 'cache')
   private readonly host: string
   private _port: number
   private readonly publicPort: number
