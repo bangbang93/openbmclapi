@@ -1,6 +1,6 @@
 {
   "name": "openbmclapi",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "bmclapi@home",
   "bin": "dist/index.js",
   "private": true,
@@ -56,6 +56,10 @@
   },
   "pkg": {
     "outputPath": "pkg",
-    "targets": ["linuxstatic", "macos", "windows"]
+    "targets": [
+      "linuxstatic",
+      "macos",
+      "windows"
+    ]
   }
 }
