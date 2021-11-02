@@ -2,11 +2,12 @@
   "name": "openbmclapi",
   "version": "0.7.0",
   "description": "bmclapi@home",
-  "main": "index.js",
+  "bin": "dist/index.js",
   "private": true,
   "scripts": {
     "test": "true",
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc",
+    "pkg": "pkg . -C Gzip"
   },
   "repository": {
     "type": "git",
@@ -52,5 +53,9 @@
   },
   "npm": {
     "publish": false
+  },
+  "pkg": {
+    "outputPath": "pkg",
+    "targets": ["linuxstatic", "macos", "windows"]
   }
 }

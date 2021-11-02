@@ -20,7 +20,6 @@ import Request = express.Request
 import Response = express.Response
 import Timeout = NodeJS.Timeout
 import Socket = SocketIOClient.Socket
-import {cwd} from 'process'
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
