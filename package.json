@@ -7,7 +7,7 @@
   "scripts": {
     "test": "true",
     "build": "rm -rf dist && tsc",
-    "pkg": "pkg . -C Gzip"
+    "pkg": "npm run build && pkg . -C Gzip"
   },
   "repository": {
     "type": "git",
