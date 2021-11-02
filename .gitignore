@@ -93,3 +93,4 @@ public/
 .env
 /cache
 dist
+pkg
