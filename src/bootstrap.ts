@@ -19,12 +19,15 @@ export async function bootstrap(version: string): Promise<void> {
   console.log(colors.green(`${files.files.length} files`))
   await cluster.syncFiles(files)
 
+  await cluster.connect()
+  console.log('请求证书')
+  await cluster.requestCert()
   if (process.env.ENABLE_NGINX) {
     await cluster.setupNginx(join(__dirname, '..'), cluster.port)
   }
-  const server = cluster.setupExpress()
-  await cluster.listen()
+  const server = cluster.setupExpress(!process.env.ENABLE_NGINX)
   try {
+    await cluster.listen()
     await cluster.enable()
   } catch (e) {
     console.error(e)

@@ -2,9 +2,10 @@ import * as Bluebird from 'bluebird'
 import {spawn} from 'child_process'
 import * as colors from 'colors/safe'
 import * as express from 'express'
+import {readFileSync} from 'fs'
 import {copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
 import got, {Got, HTTPError} from 'got'
-import {createServer, Server} from 'http'
+import {Server} from 'http'
 import {clone, template} from 'lodash'
 import {tmpdir} from 'os'
 import {dirname, join, sep} from 'path'
@@ -112,7 +113,7 @@ export class Cluster {
     await this.gc(fileList)
   }
 
-  public setupExpress(): Server {
+  public setupExpress(https: boolean): Server {
     const app = express()
     app.enable('trust proxy')
     if (!process.env.DISABLE_ACCESS_LOG) {
@@ -144,7 +145,16 @@ export class Cluster {
       }
     })
     app.use('/measure', MeasureRoute)
-    this.server = createServer(app)
+    if (https) {
+      /* eslint-disable @typescript-eslint/no-var-requires */
+      this.server = require('https').createServer({
+        key: readFileSync(join(this.cacheDir, 'key.pem'), 'utf8'),
+        cert: readFileSync(join(this.cacheDir, 'cert.pem'), 'utf8'),
+      }, app)
+    } else {
+      this.server = require('http').createServer(app)
+      /* eslint-enable @typescript-eslint/no-var-requires */
+    }
 
     return this.server
   }
@@ -201,8 +211,8 @@ export class Cluster {
     })
   }
 
-  public async enable(): Promise<void> {
-    if (this.isEnabled) return
+  public async connect(): Promise<void> {
+    if (this.io) return
     this.io = io.connect(`${this.prefixUrl}`, {
       transports: ['websocket'],
       query: {
@@ -212,13 +222,6 @@ export class Cluster {
     })
     this.io.on('connect', async () => {
       console.log('connected')
-      try {
-        await this._enable()
-        this.isEnabled = true
-      } catch (e) {
-        console.error(e)
-        process.exit(1)
-      }
     })
     this.io.on('message', (msg) => console.log(msg))
     this.io.on('disconnect', (reason: string) => {
@@ -231,6 +234,17 @@ export class Cluster {
     this.io.on('reconnect_error', this.onConnectionError)
     this.io.on('connect_timeout', this.onConnectionError)
     this.io.on('reconnect_timeout', this.onConnectionError)
+  }
+
+  public async enable(): Promise<void> {
+    if (this.isEnabled) return
+    try {
+      await this._enable()
+      this.isEnabled = true
+    } catch (e) {
+      console.error(e)
+      process.exit(1)
+    }
   }
 
   public async disable(): Promise<void> {
@@ -267,6 +281,17 @@ export class Cluster {
         resolve(date)
       })
     })
+  }
+
+  public async requestCert(): Promise<void> {
+    const cert = await new Promise<{cert: string; key: string}>((resolve, reject) => {
+      this.io.emit('request-cert', ([err, cert]) => {
+        if (err) return reject(err)
+        resolve(cert)
+      })
+    })
+    await outputFile(join(this.cacheDir, 'cert.pem'), cert.cert)
+    await outputFile(join(this.cacheDir, 'key.pem'), cert.key)
   }
 
   private async _enable(): Promise<void> {
