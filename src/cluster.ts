@@ -364,6 +364,7 @@ export class Cluster {
       const dir = queue.pop()
       const entries = await readdir(dir)
       for (const entry of entries) {
+        if (entry.endsWith('.pem')) continue
         const p = join(dir, entry)
         const s = await stat(p)
         if (s.isDirectory()) {
