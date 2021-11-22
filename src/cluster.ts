@@ -227,7 +227,6 @@ export class Cluster {
     this.io.on('disconnect', (reason: string) => {
       console.log(`disconnected: ${reason}`)
       this.isEnabled = false
-      clearTimeout(this.keepAliveInterval)
     })
     this.io.on('error', this.onConnectionError)
     this.io.on('connect_error', this.onConnectionError)
@@ -269,6 +268,9 @@ export class Cluster {
   }
 
   public async keepAlive(): Promise<boolean> {
+    if (!this.isEnabled) {
+      throw new Error('节点未启用')
+    }
     return new Promise((resolve, reject) => {
       const counters = clone(this.counters)
       this.io.emit('keep-alive', {
