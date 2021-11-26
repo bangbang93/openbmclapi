@@ -213,7 +213,7 @@ export class Cluster {
 
   public async connect(): Promise<void> {
     if (this.io) return
-    this.io = io.connect(`${this.prefixUrl}`, {
+    this.io = io.connect(this.prefixUrl, {
       transports: ['websocket'],
       query: {
         clusterId: this.clusterId, clusterSecret: this.clusterSecret,
