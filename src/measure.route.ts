@@ -10,7 +10,7 @@ router.get('/:size(\\d+)', (req, res) => {
   }
   const size = parseInt(req.params.size, 10)
   if (isNaN(size) || size > 200) return res.sendStatus(400)
-  const buffer = Buffer.alloc(size * 1024 * 1024)
+  const buffer = Buffer.allocUnsafe(size * 1024 * 1024)
   res.send(buffer)
 })
 
