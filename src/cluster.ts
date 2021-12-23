@@ -1,5 +1,5 @@
 import * as Bluebird from 'bluebird'
-import {spawn} from 'child_process'
+import {ChildProcess, spawn} from 'child_process'
 import * as colors from 'colors/safe'
 import * as express from 'express'
 import {readFileSync} from 'fs'
@@ -36,6 +36,7 @@ export class Cluster {
   public isEnabled = false
   public keepAliveInterval: Timeout
   public interval: Timeout
+  public nginxProcess: ChildProcess
 
   private keepAliveError = 0
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
@@ -177,7 +178,7 @@ export class Cluster {
     const logFd = await open(logFile, 'a')
     await ftruncate(logFd)
 
-    spawn('nginx', ['-c', confFile], {
+    this.nginxProcess = spawn('nginx', ['-c', confFile], {
       stdio: [null, logFd, 'inherit'],
     })
 
@@ -243,7 +244,7 @@ export class Cluster {
       this.isEnabled = true
     } catch (e) {
       console.error(e)
-      process.exit(1)
+      this.exit(1)
     }
   }
 
@@ -297,6 +298,13 @@ export class Cluster {
     await outputFile(join(this.cacheDir, 'key.pem'), cert.key)
   }
 
+  public exit(code: number = 0): never {
+    if (this.nginxProcess) {
+      this.nginxProcess.kill()
+    }
+    process.exit(code)
+  }
+
   private async _enable(): Promise<void> {
     return new Bluebird<void>((resolve, reject) => {
       this.io.emit('enable', {
@@ -318,7 +326,7 @@ export class Cluster {
       const status = await Bluebird.try(async () => this.keepAlive()).timeout(ms('10s'), 'keep alive timeout')
       if (!status) {
         console.log('kicked by server')
-        process.exit(1)
+        this.exit(1)
       } else {
         console.log('keep alive success')
       }
@@ -338,7 +346,7 @@ export class Cluster {
           .timeout(ms('30s'), 'restart timeout')
           .catch((e) => {
             console.error(e, 'restart failed')
-            process.exit(1)
+            this.exit(1)
           })
       }
     } finally {
@@ -350,10 +358,10 @@ export class Cluster {
     console.error('cannot connect to server', err)
     if (this.server) {
       this.server.close(() => {
-        process.exit(1)
+        this.exit(1)
       })
     } else {
-      process.exit(1)
+      this.exit(1)
     }
   }
 

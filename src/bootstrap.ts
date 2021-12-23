@@ -31,7 +31,7 @@ export async function bootstrap(version: string): Promise<void> {
     await cluster.enable()
   } catch (e) {
     console.error(e)
-    process.exit(1)
+    cluster.exit(1)
   }
   console.log(colors.rainbow(`done, serving ${files.files.length} files`))
 
@@ -59,6 +59,7 @@ export async function bootstrap(version: string): Promise<void> {
     // eslint-disable-next-line no-console
     console.log('unregister success, waiting for background task, ctrl+c again to force kill')
     server.close()
+    cluster.nginxProcess?.kill()
   }
   process.on('SIGTERM', onStop)
   process.on('SIGINT', onStop)
