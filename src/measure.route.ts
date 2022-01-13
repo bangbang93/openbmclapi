@@ -10,8 +10,10 @@ router.get('/:size(\\d+)', (req, res) => {
   }
   const size = parseInt(req.params.size, 10)
   if (isNaN(size) || size > 200) return res.sendStatus(400)
-  const buffer = Buffer.allocUnsafe(size * 1024 * 1024)
-  res.send(buffer)
+  const buffer = Buffer.alloc(1024 * 1024, '66ccff', 'hex')
+  for (let i = 0; i < size; i++) {
+    res.send(buffer)
+  }
 })
 
 export default MeasureRoute
