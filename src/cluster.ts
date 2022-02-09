@@ -21,6 +21,7 @@ import Request = express.Request
 import Response = express.Response
 import Timeout = NodeJS.Timeout
 import Socket = SocketIOClient.Socket
+import http2Express = require('http2-express-bridge')
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -115,7 +116,7 @@ export class Cluster {
   }
 
   public setupExpress(https: boolean): Server {
-    const app = express()
+    const app = http2Express(express)
     app.enable('trust proxy')
     if (!process.env.DISABLE_ACCESS_LOG) {
       app.use(morgan('combined'))
@@ -149,9 +150,10 @@ export class Cluster {
     app.use('/measure', MeasureRoute)
     if (https) {
       /* eslint-disable @typescript-eslint/no-var-requires */
-      this.server = require('https').createServer({
+      this.server = require('http2').createSecureServer({
         key: readFileSync(join(this.cacheDir, 'key.pem'), 'utf8'),
         cert: readFileSync(join(this.cacheDir, 'cert.pem'), 'utf8'),
+        allowHTTP1: true,
       }, app)
     } else {
       this.server = require('http').createServer(app)
