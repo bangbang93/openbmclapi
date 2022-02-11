@@ -232,11 +232,11 @@ export class Cluster {
       console.log(`disconnected: ${reason}`)
       this.isEnabled = false
     })
-    this.io.on('error', this.onConnectionError)
-    this.io.on('connect_error', this.onConnectionError)
-    this.io.on('reconnect_error', this.onConnectionError)
-    this.io.on('connect_timeout', this.onConnectionError)
-    this.io.on('reconnect_timeout', this.onConnectionError)
+    this.io.on('error', this.onConnectionError.bind(this))
+    this.io.on('connect_error', this.onConnectionError.bind(this))
+    this.io.on('reconnect_error', this.onConnectionError.bind(this))
+    this.io.on('connect_timeout', this.onConnectionError.bind(this))
+    this.io.on('reconnect_timeout', this.onConnectionError.bind(this))
   }
 
   public async enable(): Promise<void> {
