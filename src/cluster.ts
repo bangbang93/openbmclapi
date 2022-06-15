@@ -314,6 +314,7 @@ export class Cluster {
         host: this.host,
         port: this.publicPort,
         version: this.version,
+        byoc: process.env.CLUSTER_BYOC === 'true',
       }, ([err, ack]) => {
         if (err) return reject(err)
         if (ack !== true) return reject(ack)
