@@ -20,12 +20,15 @@ export async function bootstrap(version: string): Promise<void> {
   await cluster.syncFiles(files)
 
   await cluster.connect()
-  console.log('请求证书')
-  await cluster.requestCert()
-  if (process.env.ENABLE_NGINX) {
-    await cluster.setupNginx(join(__dirname, '..'), cluster.port)
+  const proto = process.env.CLUSTER_BYOC !== 'true' ? 'https' : 'http'
+  if (proto === 'https') {
+    console.log('请求证书')
+    await cluster.requestCert()
   }
-  const server = cluster.setupExpress(!process.env.ENABLE_NGINX)
+  if (process.env.ENABLE_NGINX) {
+    await cluster.setupNginx(join(__dirname, '..'), cluster.port, proto)
+  }
+  const server = cluster.setupExpress(proto === 'https')
   try {
     await cluster.listen()
     await cluster.enable()

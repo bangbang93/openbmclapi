@@ -163,10 +163,10 @@ export class Cluster {
     return this.server
   }
 
-  public async setupNginx(pwd: string, appPort: number): Promise<void> {
+  public async setupNginx(pwd: string, appPort: number, proto: string): Promise<void> {
     this._port++
     const dir = await mkdtemp(join(tmpdir(), 'openbmclapi'))
-    const confFile = `${dir}/nginx/nginx.conf`
+    const confFile = proto === 'https' ? `${dir}/nginx/nginx.conf` : `${dir}/nginx/nginx-http.conf`
     const confTemplate = await readFile(join(__dirname, '..', 'nginx', 'nginx.conf'), 'utf8')
     console.log('nginx conf', confFile)
 
