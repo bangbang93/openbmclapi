@@ -1,6 +1,6 @@
 {
   "name": "openbmclapi",
-  "version": "1.3.0",
+  "version": "1.4.0-rc.0",
   "description": "bmclapi@home",
   "bin": "dist/index.js",
   "private": true,
