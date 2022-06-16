@@ -12,6 +12,7 @@ import {dirname, join, sep} from 'path'
 import {cwd} from 'process'
 import * as ProgressBar from 'progress'
 import {createInterface} from 'readline'
+import {Socket} from 'socket.io-client'
 import * as io from 'socket.io-client'
 import MeasureRoute from './measure.route'
 import morgan = require('morgan')
@@ -20,7 +21,6 @@ import NextFunction = express.NextFunction
 import Request = express.Request
 import Response = express.Response
 import Timeout = NodeJS.Timeout
-import Socket = SocketIOClient.Socket
 import http2Express = require('http2-express-bridge')
 
 interface IFileList {
