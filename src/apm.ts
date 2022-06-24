@@ -1,5 +1,5 @@
-import {start} from 'elastic-apm-node'
+import * as Agent from 'elastic-apm-node'
 
 export function setupApm(): void {
-  start()
+  Agent.start()
 }
