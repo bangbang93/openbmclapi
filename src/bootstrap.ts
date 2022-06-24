@@ -1,10 +1,12 @@
 import * as colors from 'colors/safe'
 import {join} from 'path'
+import {setupApm} from './apm'
 import {Cluster} from './cluster'
 import ms = require('ms')
 import Signals = NodeJS.Signals
 
 export async function bootstrap(version: string): Promise<void> {
+  setupApm()
   console.log(colors.green(`booting openbmclapi ${version}`))
   if (!process.env.CLUSTER_PORT) {
     throw new Error('missing CLUSTER_PORT')
