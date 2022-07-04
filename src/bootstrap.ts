@@ -28,7 +28,7 @@ export async function bootstrap(version: string): Promise<void> {
   if (process.env.ENABLE_NGINX) {
     await cluster.setupNginx(join(__dirname, '..'), cluster.port, proto)
   }
-  const server = cluster.setupExpress(proto === 'https')
+  const server = cluster.setupExpress(proto === 'https' && !process.env.ENABLE_NGINX)
   try {
     await cluster.listen()
     await cluster.enable()
