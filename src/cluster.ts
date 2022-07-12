@@ -135,7 +135,10 @@ export class Cluster {
         res.set('x-bmclapi-hash', hash)
         return res.sendFile(path, {maxAge: '30d'}, (err) => {
           if (!err || err?.message === 'Request aborted' || err?.message === 'write EPIPE') {
-            this.counters.bytes += parseInt(res.getHeader('content-length').toString(), 10) || 0
+            const header = res.getHeader('content-length')
+            if (header) {
+              this.counters.bytes += parseInt(header.toString(), 10) || 0
+            }
             this.counters.hits++
           } else {
             if (err) return next(err)
