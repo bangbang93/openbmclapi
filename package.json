@@ -58,9 +58,9 @@
   "pkg": {
     "outputPath": "pkg",
     "targets": [
-      "linuxstatic",
-      "macos",
-      "windows"
+      "node16-linuxstatic",
+      "node16-macos",
+      "node16-windows"
     ]
   }
 }
