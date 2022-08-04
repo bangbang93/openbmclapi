@@ -9,7 +9,8 @@ RUN npm run build
 
 FROM node:16-bullseye-slim AS build
 
-RUN apk add nginx
+RUN apt-get install -y \
+    nginx
 
 WORKDIR /opt/openbmclapi
 ADD package-lock.json package.json ./
