@@ -1,3 +1,5 @@
+import {decompress} from '@mongodb-js/zstd'
+import {schema, Type} from 'avsc'
 import * as Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
 import * as colors from 'colors/safe'
@@ -22,6 +24,7 @@ import Request = express.Request
 import Response = express.Response
 import Timeout = NodeJS.Timeout
 import http2Express = require('http2-express-bridge')
+import RecordType = schema.RecordType
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -79,11 +82,25 @@ export class Cluster {
   }
 
   public async getFileList(): Promise<IFileList> {
-    const res = await this.got.get<IFileList>('openbmclapi/files', {
-      responseType: 'json',
+    const FileListSchema = Type.forSchema({
+      type: 'array',
+      items: {
+        type: 'record',
+        fields: [
+          {name: 'path', type: 'string'},
+          {name: 'hash', type: 'string'},
+          {name: 'size', type: 'long'},
+        ],
+      } as RecordType,
+    })
+    const res = await this.got.get('openbmclapi/files', {
+      responseType: 'buffer',
       cache: this.requestCache,
     })
-    return res.body
+    const decompressed = await decompress(res.body)
+    return {
+      files: FileListSchema.fromBuffer(decompressed),
+    }
   }
 
   public async syncFiles(fileList: IFileList): Promise<void> {
