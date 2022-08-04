@@ -9,7 +9,8 @@ RUN npm run build
 
 FROM node:16-bullseye-slim AS build
 
-RUN apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
     nginx
 
 WORKDIR /opt/openbmclapi
