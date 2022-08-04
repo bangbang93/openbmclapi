@@ -7,7 +7,7 @@ RUN npm ci
 ADD src .
 RUN npm run build
 
-FROM node:16-alpine AS build
+FROM node:16-bullseye-slim AS build
 
 RUN apk add nginx
 
