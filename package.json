@@ -60,7 +60,7 @@
   "pkg": {
     "outputPath": "pkg",
     "targets": [
-      "node16-linuxstatic",
+      "node16-linux",
       "node16-macos",
       "node16-windows"
     ],
