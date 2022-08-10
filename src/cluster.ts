@@ -1,4 +1,4 @@
-import {decompress} from '@mongodb-js/zstd'
+import {ZstdInit} from '@oneidentity/zstd-js'
 import {schema, Type} from 'avsc'
 import * as Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
@@ -14,16 +14,16 @@ import {dirname, join, sep} from 'path'
 import {cwd} from 'process'
 import * as ProgressBar from 'progress'
 import {createInterface} from 'readline'
-import {Socket} from 'socket.io-client'
 import * as io from 'socket.io-client'
+import {Socket} from 'socket.io-client'
 import MeasureRoute from './measure.route'
+import http2Express = require('http2-express-bridge')
 import morgan = require('morgan')
 import ms = require('ms')
 import NextFunction = express.NextFunction
 import Request = express.Request
 import Response = express.Response
 import Timeout = NodeJS.Timeout
-import http2Express = require('http2-express-bridge')
 import RecordType = schema.RecordType
 
 interface IFileList {
@@ -97,9 +97,10 @@ export class Cluster {
       responseType: 'buffer',
       cache: this.requestCache,
     })
-    const decompressed = await decompress(res.body)
+    const {ZstdStream} = await ZstdInit()
+    const decompressed = ZstdStream.decompress(res.body)
     return {
-      files: FileListSchema.fromBuffer(decompressed),
+      files: FileListSchema.fromBuffer(Buffer.from(decompressed)),
     }
   }
 
