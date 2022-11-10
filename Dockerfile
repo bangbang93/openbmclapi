@@ -23,4 +23,4 @@ COPY nginx/ /opt/openbmclapi/nginx
 ENV CLUSTER_PORT=4000
 EXPOSE 4000
 VOLUME /opt/openbmclapi/cache
-CMD node dist/index
+CMD ["node", "dist/index.js"]
