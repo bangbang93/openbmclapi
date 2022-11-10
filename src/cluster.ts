@@ -16,6 +16,7 @@ import * as ProgressBar from 'progress'
 import {createInterface} from 'readline'
 import * as io from 'socket.io-client'
 import {Socket} from 'socket.io-client'
+import {validateFile} from './file'
 import MeasureRoute from './measure.route'
 import http2Express = require('http2-express-bridge')
 import morgan = require('morgan')
@@ -123,11 +124,15 @@ export class Cluster {
         console.log(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       }
       let lastProgress = 0
-      const res = await this.got.get(file.path.substr(1), {searchParams: {noopen: 1}})
+      const res = await this.got.get<Buffer>(file.path.substr(1))
         .on('downloadProgress', (progress) => {
           bar.tick(progress.transferred - lastProgress)
           lastProgress = progress.transferred
         })
+      const isFileCorrect = validateFile(res.body, file.hash)
+      if (!isFileCorrect) {
+        throw new Error(`文件${file.path}校验失败`)
+      }
       await outputFile(path, res.body)
     }
     await this.gc(fileList)
