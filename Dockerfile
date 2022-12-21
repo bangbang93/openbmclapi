@@ -23,4 +23,4 @@ COPY nginx/ /opt/openbmclapi/nginx
 ENV CLUSTER_PORT=4000
 EXPOSE $CLUSTER_PORT
 VOLUME /opt/openbmclapi/cache
-CMD ["node", "dist/index.js"]
+CMD ["node", "--enable-source-maps", "dist/index.js"]

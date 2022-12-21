@@ -1,12 +1,11 @@
 import cluster from 'cluster'
 import {config} from 'dotenv'
-import * as fs from 'fs'
+import {readFileSync} from 'fs'
 import ms from 'ms'
-import * as path from 'path'
-import 'source-map-support'
+import {join} from 'path'
 import {bootstrap} from './bootstrap'
 
-const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'))
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'))
 
 config()
 if (process.env.NO_DAEMON || !cluster.isPrimary) {
