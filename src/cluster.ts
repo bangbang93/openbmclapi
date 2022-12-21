@@ -199,7 +199,7 @@ export class Cluster {
     await rm(this._port, {force: true})
     const dir = await mkdtemp(join(tmpdir(), 'openbmclapi'))
     const confFile = `${dir}/nginx/nginx.conf`
-    const templateFile = proto === 'https' ? 'nginx.conf' : 'nginx-http.conf'
+    const templateFile = 'nginx.conf'
     const confTemplate = await readFile(join(__dirname, '..', 'nginx', templateFile), 'utf8')
     console.log('nginx conf', confFile)
 
@@ -207,6 +207,7 @@ export class Cluster {
     await outputFile(confFile, template(confTemplate)({
       root: pwd,
       port: appPort,
+      ssl: proto === 'https',
     }))
 
     const logFile = join(__dirname, '..', 'access.log')
