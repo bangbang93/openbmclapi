@@ -45,7 +45,7 @@
     "@types/lodash": "^4.14.182",
     "@types/morgan": "^1.7.36",
     "@types/ms": "^0.7.30",
-    "@types/node": "^12.6.9",
+    "@types/node": "^18.11.17",
     "@types/progress": "^2.0.5",
     "@typescript-eslint/eslint-plugin": "^4.28.5",
     "@typescript-eslint/parser": "^4.28.5",

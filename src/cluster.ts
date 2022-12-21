@@ -5,7 +5,8 @@ import {ChildProcess, spawn} from 'child_process'
 import * as colors from 'colors/safe'
 import * as express from 'express'
 import {readFileSync} from 'fs'
-import {copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
+import {rm} from 'fs/promises'
+import {chmod, copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
 import got, {Got, HTTPError} from 'got'
 import {Server} from 'http'
 import {clone, template} from 'lodash'
@@ -47,7 +48,7 @@ export class Cluster {
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(cwd(), 'cache')
   private readonly host: string
-  private _port: number
+  private _port: number | string
   private readonly publicPort: number
   private readonly ua: string
   private readonly got: Got
@@ -56,7 +57,7 @@ export class Cluster {
 
   private server: Server
 
-  public get port() {
+  public get port(): number | string {
     return this._port
   }
 
@@ -193,7 +194,8 @@ export class Cluster {
   }
 
   public async setupNginx(pwd: string, appPort: number, proto: string): Promise<void> {
-    this._port++
+    this._port = join(this.cacheDir, 'openbmclapi.sock')
+    await rm(this._port, {force: true})
     const dir = await mkdtemp(join(tmpdir(), 'openbmclapi'))
     const confFile = `${dir}/nginx/nginx.conf`
     const templateFile = proto === 'https' ? 'nginx.conf' : 'nginx-http.conf'
@@ -240,9 +242,13 @@ export class Cluster {
   }
 
   public async listen(): Promise<void> {
-    return new Promise((resolve) => {
+    await new Promise<void>((resolve) => {
       this.server.listen(this._port, resolve)
     })
+    if (typeof this._port === 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+      await chmod(this._port, 0o777)
+    }
   }
 
   public async connect(): Promise<void> {

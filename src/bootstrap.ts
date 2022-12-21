@@ -26,7 +26,11 @@ export async function bootstrap(version: string): Promise<void> {
     await cluster.requestCert()
   }
   if (process.env.ENABLE_NGINX) {
-    await cluster.setupNginx(join(__dirname, '..'), cluster.port, proto)
+    if (typeof cluster.port === 'number') {
+      await cluster.setupNginx(join(__dirname, '..'), cluster.port, proto)
+    } else {
+      throw new Error('cluster.port is not a number')
+    }
   }
   const server = cluster.setupExpress(proto === 'https' && !process.env.ENABLE_NGINX)
   try {
