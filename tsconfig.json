@@ -1,8 +1,6 @@
 {
+  "extends": "@tsconfig/node18",
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "esnext",
-    "lib": ["es5", "es6", "es7", "esnext"],
     "sourceMap": true,
     "noUnusedLocals": true,
     "experimentalDecorators": true,

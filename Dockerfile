@@ -1,4 +1,4 @@
-FROM node:16-alpine AS install
+FROM node:18-alpine AS install
 
 WORKDIR /opt/openbmclapi
 RUN apk add build-base
@@ -7,7 +7,7 @@ RUN npm ci
 ADD src .
 RUN npm run build
 
-FROM node:16-bullseye-slim AS build
+FROM node:18-bullseye-slim AS build
 
 RUN apt-get update && \
     apt-get install -y \
@@ -21,6 +21,6 @@ COPY --from=install /opt/openbmclapi/dist ./dist
 COPY nginx/ /opt/openbmclapi/nginx
 
 ENV CLUSTER_PORT=4000
-EXPOSE 4000
+EXPOSE $CLUSTER_PORT
 VOLUME /opt/openbmclapi/cache
 CMD ["node", "dist/index.js"]

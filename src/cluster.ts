@@ -1,27 +1,26 @@
 import {ZstdInit} from '@oneidentity/zstd-js'
 import {schema, Type} from 'avsc'
-import * as Bluebird from 'bluebird'
+import Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
-import * as colors from 'colors/safe'
-import * as express from 'express'
+import colors from 'colors/safe'
+import express from 'express'
 import {readFileSync} from 'fs'
-import {rm} from 'fs/promises'
 import {chmod, copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
+import {rm} from 'fs/promises'
 import got, {Got, HTTPError} from 'got'
 import {Server} from 'http'
-import {clone, template} from 'lodash'
+import {clone, sum, template} from 'lodash'
+import morgan from 'morgan'
+import ms from 'ms'
 import {tmpdir} from 'os'
 import {dirname, join, sep} from 'path'
 import {cwd} from 'process'
-import * as ProgressBar from 'progress'
+import ProgressBar from 'progress'
 import {createInterface} from 'readline'
-import * as io from 'socket.io-client'
-import {Socket} from 'socket.io-client'
+import {connect, Socket} from 'socket.io-client'
 import {validateFile} from './file'
 import MeasureRoute from './measure.route'
 import http2Express = require('http2-express-bridge')
-import morgan = require('morgan')
-import ms = require('ms')
 import NextFunction = express.NextFunction
 import Request = express.Request
 import Response = express.Response
@@ -40,22 +39,22 @@ interface ICounters {
 export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}
   public isEnabled = false
-  public keepAliveInterval: Timeout
-  public interval: Timeout
-  public nginxProcess: ChildProcess
+  public keepAliveInterval: Timeout | undefined
+  public interval: Timeout | undefined
+  public nginxProcess: ChildProcess | undefined
 
   private keepAliveError = 0
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(cwd(), 'cache')
-  private readonly host: string
+  private readonly host: string | undefined
   private _port: number | string
   private readonly publicPort: number
   private readonly ua: string
   private readonly got: Got
   private readonly requestCache = new Map()
-  private io: Socket
+  private io?: Socket
 
-  private server: Server
+  private server?: Server
 
   public get port(): number | string {
     return this._port
@@ -68,8 +67,8 @@ export class Cluster {
   ) {
     if (!clusterId || !clusterSecret) throw new Error('missing config')
     this.host = process.env.CLUSTER_IP
-    this._port = parseInt(process.env.CLUSTER_PORT, 10)
-    this.publicPort = parseInt(process.env.CLUSTER_PUBLIC_PORT, 10) || this._port
+    this._port = parseInt(process.env.CLUSTER_PORT ?? '4000', 10)
+    this.publicPort = process.env.CLUSTER_PUBLIC_PORT ? parseInt(process.env.CLUSTER_PUBLIC_PORT, 10) : this._port
     this.ua = `openbmclapi-cluster/${version}`
     this.got = got.extend({
       prefixUrl: this.prefixUrl,
@@ -111,7 +110,7 @@ export class Cluster {
       const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
       return !await pathExists(path)
     })
-    const totalSize = files.reduce((p, e) => p + e.size, 0)
+    const totalSize = sum(files.map((file) => file.size))
     const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
       total: totalSize,
       width: 80,
@@ -178,19 +177,21 @@ export class Cluster {
       }
     })
     app.use('/measure', MeasureRoute)
+    let server: Server
     if (https) {
       /* eslint-disable @typescript-eslint/no-var-requires */
-      this.server = require('http2').createSecureServer({
+      server = require('http2').createSecureServer({
         key: readFileSync(join(this.cacheDir, 'key.pem'), 'utf8'),
         cert: readFileSync(join(this.cacheDir, 'cert.pem'), 'utf8'),
         allowHTTP1: true,
       }, app)
     } else {
-      this.server = require('http').createServer(app)
+      server = require('http').createServer(app)
       /* eslint-enable @typescript-eslint/no-var-requires */
     }
+    this.server = server
 
-    return this.server
+    return server
   }
 
   public async setupNginx(pwd: string, appPort: number, proto: string): Promise<void> {
@@ -233,7 +234,7 @@ export class Cluster {
         return
       }
       this.counters.hits++
-      this.counters.bytes += parseInt(match.groups.size, 10)
+      this.counters.bytes += parseInt(match.groups?.size ?? '0', 10)
     })
 
     this.interval = setInterval(async () => {
@@ -243,6 +244,9 @@ export class Cluster {
 
   public async listen(): Promise<void> {
     await new Promise<void>((resolve) => {
+      if (!this.server) {
+        throw new Error('server not setup')
+      }
       this.server.listen(this._port, resolve)
     })
     if (typeof this._port === 'string') {
@@ -253,7 +257,7 @@ export class Cluster {
 
   public async connect(): Promise<void> {
     if (this.io) return
-    this.io = io.connect(this.prefixUrl, {
+    this.io = connect(this.prefixUrl, {
       transports: ['websocket'],
       query: {
         clusterId: this.clusterId, clusterSecret: this.clusterSecret,
@@ -288,10 +292,10 @@ export class Cluster {
 
   public async disable(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.io.emit('disable', null, ([err, ack]) => {
+      this.io?.emit('disable', null, ([err, ack]: [unknown, unknown]) => {
         this.isEnabled = false
         if (err || ack !== true) return reject(err || ack)
-        this.io.disconnect()
+        this.io?.disconnect()
         resolve()
       })
     })
@@ -313,21 +317,21 @@ export class Cluster {
     }
     return new Promise((resolve, reject) => {
       const counters = clone(this.counters)
-      this.io.emit('keep-alive', {
+      this.io?.emit('keep-alive', {
         time: new Date(),
         ...counters,
-      }, ([err, date]) => {
+      }, ([err, date]: [unknown, string]) => {
         if (err) return reject(err)
         this.counters.hits -= counters.hits
         this.counters.bytes -= counters.bytes
-        resolve(date)
+        resolve(!!date)
       })
     })
   }
 
   public async requestCert(): Promise<void> {
     const cert = await new Promise<{cert: string; key: string}>((resolve, reject) => {
-      this.io.emit('request-cert', ([err, cert]) => {
+      this.io?.emit('request-cert', ([err, cert]: [unknown, {cert: string; key: string}]) => {
         if (err) return reject(err)
         resolve(cert)
       })
@@ -345,12 +349,12 @@ export class Cluster {
 
   private async _enable(): Promise<void> {
     return new Bluebird<void>((resolve, reject) => {
-      this.io.emit('enable', {
+      this.io?.emit('enable', {
         host: this.host,
         port: this.publicPort,
         version: this.version,
         byoc: process.env.CLUSTER_BYOC === 'true',
-      }, ([err, ack]) => {
+      }, ([err, ack]: [unknown, unknown]) => {
         if (err) return reject(err)
         if (ack !== true) return reject(ack)
         resolve()
@@ -393,7 +397,7 @@ export class Cluster {
     }
   }
 
-  private async onConnectionError(err): Promise<void> {
+  private async onConnectionError(err: Error): Promise<void> {
     console.error('cannot connect to server', err)
     if (this.server) {
       this.server.close(() => {
@@ -412,6 +416,7 @@ export class Cluster {
     const queue = [this.cacheDir]
     do {
       const dir = queue.pop()
+      if (!dir) break
       const entries = await readdir(dir)
       for (const entry of entries) {
         if (entry.endsWith('.pem')) continue

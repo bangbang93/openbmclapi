@@ -37,6 +37,7 @@
     "source-map-support": "^0.5.21"
   },
   "devDependencies": {
+    "@tsconfig/node18": "^1.0.1",
     "@types/bluebird": "^3.5.27",
     "@types/colors": "^1.2.1",
     "@types/dotenv": "^6.1.1",
@@ -52,7 +53,7 @@
     "eslint": "^7.32.0",
     "pkg": "^5.7.0",
     "ts-node": "^8.3.0",
-    "typescript": "^4.4.3"
+    "typescript": "^4.9.4"
   },
   "npm": {
     "publish": false

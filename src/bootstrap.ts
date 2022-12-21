@@ -1,7 +1,7 @@
-import * as colors from 'colors/safe'
+import colors from 'colors/safe'
+import ms from 'ms'
 import {join} from 'path'
 import {Cluster} from './cluster'
-import ms = require('ms')
 import Signals = NodeJS.Signals
 
 export async function bootstrap(version: string): Promise<void> {
@@ -10,8 +10,8 @@ export async function bootstrap(version: string): Promise<void> {
     throw new Error('missing CLUSTER_PORT')
   }
   const cluster = new Cluster(
-    process.env.CLUSTER_ID,
-    process.env.CLUSTER_SECRET,
+    process.env.CLUSTER_ID!,
+    process.env.CLUSTER_SECRET!,
     version,
   )
 
