@@ -44,7 +44,7 @@ export class Cluster {
   public nginxProcess: ChildProcess | undefined
 
   private keepAliveError = 0
-  private readonly prefixUrl = process.env.CLUSTER_BMCLAPI || 'https://openbmclapi.bangbang93.com'
+  private readonly prefixUrl = process.env.CLUSTER_BMCLAPI ?? 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(cwd(), 'cache')
   private readonly host: string | undefined
   private _port: number | string
@@ -55,10 +55,6 @@ export class Cluster {
   private io?: Socket
 
   private server?: Server
-
-  public get port(): number | string {
-    return this._port
-  }
 
   public constructor(
     private readonly clusterId: string,
@@ -80,6 +76,10 @@ export class Cluster {
       responseType: 'buffer',
       timeout: ms('1m'),
     })
+  }
+
+  public get port(): number | string {
+    return this._port
   }
 
   public async getFileList(): Promise<IFileList> {
@@ -117,14 +117,14 @@ export class Cluster {
     })
     const sortedFiles = files.sort((a, b) => a.path > b.path ? 1 : 0)
     for (const file of sortedFiles) {
-      const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
+      const path = join(this.cacheDir, file.hash.substring(0, 2), file.hash)
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       } else {
         console.log(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       }
       let lastProgress = 0
-      const res = await this.got.get<Buffer>(file.path.substr(1))
+      const res = await this.got.get<Buffer>(file.path.substring(1))
         .on('downloadProgress', (progress) => {
           bar.tick(progress.transferred - lastProgress)
           lastProgress = progress.transferred

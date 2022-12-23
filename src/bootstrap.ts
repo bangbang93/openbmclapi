@@ -1,4 +1,5 @@
 import colors from 'colors/safe'
+import {HTTPError} from 'got'
 import ms from 'ms'
 import {join} from 'path'
 import {Cluster} from './cluster'
@@ -17,7 +18,14 @@ export async function bootstrap(version: string): Promise<void> {
 
   const files = await cluster.getFileList()
   console.log(colors.green(`${files.files.length} files`))
-  await cluster.syncFiles(files)
+  try {
+    await cluster.syncFiles(files)
+  } catch (e) {
+    if (e instanceof HTTPError) {
+      console.error(colors.red(e.response.url))
+    }
+    throw e
+  }
 
   await cluster.connect()
   const proto = process.env.CLUSTER_BYOC !== 'true' ? 'https' : 'http'
