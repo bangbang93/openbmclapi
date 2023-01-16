@@ -98,8 +98,8 @@ export class Cluster {
       responseType: 'buffer',
       cache: this.requestCache,
     })
-    const {ZstdStream} = await ZstdInit()
-    const decompressed = ZstdStream.decompress(res.body)
+    const {ZstdSimple} = await ZstdInit()
+    const decompressed = ZstdSimple.decompress(res.body)
     return {
       files: FileListSchema.fromBuffer(Buffer.from(decompressed)),
     }
