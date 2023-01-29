@@ -53,9 +53,18 @@ export async function bootstrap(version: string): Promise<void> {
   let checkFileInterval = setTimeout(checkFile, ms('10m'))
   async function checkFile(): Promise<void> {
     console.log(colors.gray('refresh files'))
-    const files = await cluster.getFileList()
-    await cluster.syncFiles(files)
-    checkFileInterval = setTimeout(checkFile, ms('10m'))
+    try {
+      const files = await cluster.getFileList()
+      await cluster.syncFiles(files)
+    } finally {
+      checkFileInterval = setTimeout(() => {
+        checkFile()
+          .catch((e) => {
+            console.error('check file error')
+            console.error(e)
+          })
+      }, ms('10m'))
+    }
   }
 
   let stopping = false
