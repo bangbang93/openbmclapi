@@ -10,8 +10,7 @@ RUN npm run build
 FROM node:18-bullseye-slim AS build
 
 RUN apt-get update && \
-    apt-get install -y \
-    nginx
+    apt-get install -y nginx tini
 
 WORKDIR /opt/openbmclapi
 ADD package-lock.json package.json ./
@@ -23,4 +22,4 @@ COPY nginx/ /opt/openbmclapi/nginx
 ENV CLUSTER_PORT=4000
 EXPOSE $CLUSTER_PORT
 VOLUME /opt/openbmclapi/cache
-CMD ["node", "--enable-source-maps", "dist/index.js"]
+CMD ["tini", "--", "node", "--enable-source-maps", "dist/index.js"]
