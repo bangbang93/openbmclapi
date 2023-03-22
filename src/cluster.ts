@@ -1,4 +1,3 @@
-import {ZstdInit} from '@oneidentity/zstd-js'
 import {schema, Type} from 'avsc'
 import Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
@@ -7,6 +6,7 @@ import express from 'express'
 import {readFileSync} from 'fs'
 import {chmod, copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
 import {rm} from 'fs/promises'
+import {decompress} from 'fzstd'
 import got, {Got, HTTPError} from 'got'
 import {Server} from 'http'
 import {clone, sum, template} from 'lodash'
@@ -98,8 +98,7 @@ export class Cluster {
       responseType: 'buffer',
       cache: this.requestCache,
     })
-    const {ZstdStream} = await ZstdInit()
-    const decompressed = ZstdStream.decompress(res.body)
+    const decompressed = decompress(res.body)
     return {
       files: FileListSchema.fromBuffer(Buffer.from(decompressed)),
     }
