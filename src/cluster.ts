@@ -39,14 +39,14 @@ interface ICounters {
 export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}
   public isEnabled = false
-  public keepAliveInterval: Timeout | undefined
-  public interval: Timeout | undefined
-  public nginxProcess: ChildProcess | undefined
+  public keepAliveInterval?: Timeout
+  public interval?: Timeout
+  public nginxProcess?: ChildProcess
 
   private keepAliveError = 0
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI ?? 'https://openbmclapi.bangbang93.com'
   private readonly cacheDir = join(cwd(), 'cache')
-  private readonly host: string | undefined
+  private readonly host?: string
   private _port: number | string
   private readonly publicPort: number
   private readonly ua: string

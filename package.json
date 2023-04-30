@@ -38,7 +38,6 @@
   "devDependencies": {
     "@tsconfig/node18": "^1.0.1",
     "@types/bluebird": "^3.5.27",
-    "@types/colors": "^1.2.1",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.13",
     "@types/fs-extra": "^8.0.0",
