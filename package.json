@@ -7,7 +7,8 @@
   "scripts": {
     "test": "true",
     "build": "rm -rf dist && tsc",
-    "pkg": "npm run build && pkg . -C Gzip"
+    "pkg": "npm run build && pkg . -C Gzip",
+    "lint": "eslint . --ext .ts"
   },
   "repository": {
     "type": "git",
@@ -36,6 +37,7 @@
     "socket.io-client": "^4.5.1"
   },
   "devDependencies": {
+    "@bangbang93/eslint-config-recommended": "^0.0.3",
     "@tsconfig/node18": "^1.0.1",
     "@types/bluebird": "^3.5.27",
     "@types/dotenv": "^6.1.1",
