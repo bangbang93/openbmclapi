@@ -1,14 +1,15 @@
-import {schema, Type} from 'avsc'
+import {type schema, Type} from 'avsc'
 import Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
 import colors from 'colors/safe'
-import express from 'express'
+import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
 import {chmod, copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
 import {rm} from 'fs/promises'
 import {decompress} from 'fzstd'
-import got, {Got, HTTPError} from 'got'
+import got, {type Got, HTTPError} from 'got'
 import {Server} from 'http'
+import http2Express from 'http2-express-bridge'
 import {clone, sum, template} from 'lodash'
 import morgan from 'morgan'
 import ms from 'ms'
@@ -18,14 +19,8 @@ import {cwd} from 'process'
 import ProgressBar from 'progress'
 import {createInterface} from 'readline'
 import {connect, Socket} from 'socket.io-client'
-import {validateFile} from './file'
-import MeasureRoute from './measure.route'
-import http2Express = require('http2-express-bridge')
-import NextFunction = express.NextFunction
-import Request = express.Request
-import Response = express.Response
-import Timeout = NodeJS.Timeout
-import RecordType = schema.RecordType
+import {validateFile} from './file.js'
+import MeasureRoute from './measure.route.js'
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -39,8 +34,8 @@ interface ICounters {
 export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}
   public isEnabled = false
-  public keepAliveInterval?: Timeout
-  public interval?: Timeout
+  public keepAliveInterval?: NodeJS.Timeout
+  public interval?: NodeJS.Timeout
   public nginxProcess?: ChildProcess
 
   private keepAliveError = 0
@@ -92,7 +87,7 @@ export class Cluster {
           {name: 'hash', type: 'string'},
           {name: 'size', type: 'long'},
         ],
-      } as RecordType,
+      } as schema.RecordType,
     })
     const res = await this.got.get('openbmclapi/files', {
       responseType: 'buffer',

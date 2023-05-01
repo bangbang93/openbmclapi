@@ -3,7 +3,7 @@ import {config} from 'dotenv'
 import {readFileSync} from 'fs'
 import ms from 'ms'
 import {join} from 'path'
-import {bootstrap} from './bootstrap'
+import {bootstrap} from './bootstrap.js'
 
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'))
 

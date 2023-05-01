@@ -2,8 +2,7 @@ import colors from 'colors/safe'
 import {HTTPError} from 'got'
 import ms from 'ms'
 import {join} from 'path'
-import {Cluster} from './cluster'
-import Signals = NodeJS.Signals
+import {Cluster} from './cluster.js'
 
 export async function bootstrap(version: string): Promise<void> {
   console.log(colors.green(`booting openbmclapi ${version}`))
@@ -68,7 +67,7 @@ export async function bootstrap(version: string): Promise<void> {
   }
 
   let stopping = false
-  const onStop = async (signal: Signals): Promise<void> => {
+  const onStop = async (signal: NodeJS.Signals): Promise<void> => {
     console.log(`got ${signal}, unregistering cluster`)
     if (stopping) process.exit(0)
 

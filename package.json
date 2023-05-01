@@ -6,8 +6,10 @@
   "private": true,
   "scripts": {
     "test": "true",
-    "build": "rm -rf dist && tsc",
-    "pkg": "npm run build && pkg . -C Gzip",
+    "build": "rm -rf dist && npm run build:esbuild",
+    "build:tsc": "rm -rf dist && tsc",
+    "build:esbuild": "esbuild --bundle --platform=node --sourcemap --outfile=dist/openbmclapi.js src/index.ts",
+    "pkg": "npm run build && pkg dist/openbmclapi.js -C Gzip",
     "lint": "eslint . --ext .ts"
   },
   "repository": {
@@ -38,6 +40,7 @@
   },
   "devDependencies": {
     "@bangbang93/eslint-config-recommended": "^0.0.3",
+    "@tsconfig/esm": "^1.0.3",
     "@tsconfig/node18": "^1.0.1",
     "@types/bluebird": "^3.5.27",
     "@types/dotenv": "^6.1.1",
@@ -50,10 +53,11 @@
     "@types/progress": "^2.0.5",
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
+    "esbuild": "^0.17.18",
     "eslint": "^8.30.0",
     "pkg": "^5.7.0",
     "ts-node": "^8.3.0",
-    "typescript": "^4.9.4"
+    "typescript": "^5.0.4"
   },
   "npm": {
     "publish": false
