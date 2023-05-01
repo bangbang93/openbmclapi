@@ -6,10 +6,9 @@
   "private": true,
   "scripts": {
     "test": "true",
-    "build": "rm -rf dist && npm run build:esbuild",
-    "build:tsc": "rm -rf dist && tsc",
+    "build": "rm -rf dist && tsc",
     "build:esbuild": "esbuild --bundle --platform=node --sourcemap --outfile=dist/openbmclapi.js src/index.ts",
-    "pkg": "npm run build && pkg dist/openbmclapi.js -C Gzip",
+    "pkg": "npm run build:esbuild && pkg dist/openbmclapi.js -C Gzip",
     "lint": "eslint . --ext .ts"
   },
   "repository": {

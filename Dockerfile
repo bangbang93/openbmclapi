@@ -5,7 +5,7 @@ RUN apk add build-base
 COPY package-lock.json package.json tsconfig.json ./
 RUN npm ci
 COPY src ./src
-RUN npm run build:tsc
+RUN npm run build
 
 FROM node:18-bullseye-slim AS build
 
