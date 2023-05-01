@@ -2,10 +2,10 @@ FROM node:18-alpine AS install
 
 WORKDIR /opt/openbmclapi
 RUN apk add build-base
-ADD package-lock.json package.json tsconfig.json ./
+COPY package-lock.json package.json tsconfig.json ./
 RUN npm ci
-ADD src .
-RUN npm run build
+COPY src ./src
+RUN npm run build:tsc
 
 FROM node:18-bullseye-slim AS build
 
@@ -13,7 +13,7 @@ RUN apt-get update && \
     apt-get install -y nginx tini
 
 WORKDIR /opt/openbmclapi
-ADD package-lock.json package.json ./
+COPY package-lock.json package.json ./
 RUN npm ci --prod
 
 COPY --from=install /opt/openbmclapi/dist ./dist
