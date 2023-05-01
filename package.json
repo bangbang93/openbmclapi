@@ -17,7 +17,7 @@
     "url": "git+https://github.com/bangbang93/openbmclapi.git"
   },
   "author": "bangbang93 <bangbang93@163.com>",
-  "license": "LGPL-3.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/bangbang93/openbmclapi/issues"
   },
