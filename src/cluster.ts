@@ -17,8 +17,8 @@ import {tmpdir} from 'os'
 import {dirname, join, sep} from 'path'
 import {cwd} from 'process'
 import ProgressBar from 'progress'
-import {createInterface} from 'readline'
 import {connect, Socket} from 'socket.io-client'
+import {Tail} from 'tail'
 import {validateFile} from './file.js'
 import MeasureRoute from './measure.route.js'
 
@@ -212,17 +212,15 @@ export class Cluster {
       stdio: [null, logFd, 'inherit'],
     })
 
-    const tail = spawn('tail', ['-f', logFile])
-    const rl = createInterface({
-      input: tail.stdout,
-    })
-
+    const tail = new Tail(logFile)
     if (!process.env.DISABLE_ACCESS_LOG) {
-      tail.stdout.pipe(process.stdout)
+      tail.on('line', (line: string) => {
+        process.stdout.write(line)
+      })
     }
     // eslint-disable-next-line max-len
     const logRegexp = /^(?<client>\S+) \S+ (?<userid>\S+) \[(?<datetime>[^\]]+)] "(?<method>[A-Z]+) (?<request>[^ "]+)? HTTP\/[0-9.]+" (?<status>[0-9]{3}) (?<size>[0-9]+|-) "(?<referrer>[^"]*)" "(?<useragent>[^"]*)"/
-    rl.on('line', (line: string) => {
+    tail.on('line', (line: string) => {
       const match = line.match(logRegexp)
       if (!match) {
         console.log(`cannot parse nginx log: ${line}`)

@@ -35,7 +35,8 @@
     "morgan": "^1.9.1",
     "ms": "^2.1.2",
     "progress": "^2.0.3",
-    "socket.io-client": "^4.5.1"
+    "socket.io-client": "^4.5.1",
+    "tail": "^2.2.6"
   },
   "devDependencies": {
     "@bangbang93/eslint-config-recommended": "^0.0.3",
@@ -50,6 +51,7 @@
     "@types/ms": "^0.7.30",
     "@types/node": "^18.11.17",
     "@types/progress": "^2.0.5",
+    "@types/tail": "^2.2.1",
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
     "esbuild": "^0.17.18",
