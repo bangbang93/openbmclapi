@@ -4,6 +4,7 @@
   "description": "bmclapi@home",
   "bin": "dist/index.js",
   "private": true,
+  "type": "module",
   "scripts": {
     "test": "true",
     "build": "rm -rf dist && tsc",
