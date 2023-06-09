@@ -21,7 +21,7 @@ import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {validateFile} from './file.js'
 import MeasureRoute from './measure.route.js'
-import {hashToFilename} from './util'
+import {hashToFilename} from './util.js'
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
