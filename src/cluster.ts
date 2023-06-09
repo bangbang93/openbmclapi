@@ -21,6 +21,7 @@ import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {validateFile} from './file.js'
 import MeasureRoute from './measure.route.js'
+import {hashToFilename} from './util'
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -100,18 +101,16 @@ export class Cluster {
   }
 
   public async syncFiles(fileList: IFileList): Promise<void> {
-    const files = await Bluebird.filter(fileList.files, async (file) => {
-      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-      const path = join(this.cacheDir, file.hash.substring(0, 2), file.hash)
+    const missingFiles = await Bluebird.filter(fileList.files, async (file) => {
+      const path = join(this.cacheDir, hashToFilename(file.hash))
       return !await fse.pathExists(path)
     })
-    const totalSize = sum(files.map((file) => file.size))
+    const totalSize = sum(missingFiles.map((file) => file.size))
     const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
       total: totalSize,
       width: 80,
     })
-    const sortedFiles = files.sort((a, b) => a.path > b.path ? 1 : 0)
-    for (const file of sortedFiles) {
+    for (const file of missingFiles) {
       const path = join(this.cacheDir, file.hash.substring(0, 2), file.hash)
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
@@ -139,10 +138,10 @@ export class Cluster {
     if (!process.env.DISABLE_ACCESS_LOG) {
       app.use(morgan('combined'))
     }
-    app.get('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
+    app.get('/download/:hash(\\w+)', async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const hash = req.params.hash
-        const path = join(this.cacheDir, hash.substr(0, 2), hash)
+        const hash = req.params.hash.toLowerCase()
+        const path = join(this.cacheDir, hashToFilename(hash))
         if (!await fse.pathExists(path)) {
           await this.downloadFile(hash)
         }
@@ -301,7 +300,7 @@ export class Cluster {
       searchParams: {noopen: 1},
     })
 
-    const path = join(this.cacheDir, this.hashToFilename(hash))
+    const path = join(this.cacheDir, hashToFilename(hash))
     await fse.outputFile(path, res.body)
   }
 
@@ -405,7 +404,7 @@ export class Cluster {
   private async gc(fileList: IFileList): Promise<void> {
     const fileSet = new Set<string>()
     for (const file of fileList.files) {
-      fileSet.add(this.hashToFilename(file.hash))
+      fileSet.add(hashToFilename(file.hash))
     }
     const queue = [this.cacheDir]
     do {
@@ -427,9 +426,5 @@ export class Cluster {
         }
       }
     } while (queue.length !== 0)
-  }
-
-  private hashToFilename(hash: string): string {
-    return join(hash.substr(0, 2), hash)
   }
 }
