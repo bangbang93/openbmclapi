@@ -4,11 +4,12 @@ import {ChildProcess, spawn} from 'child_process'
 import colors from 'colors/safe.js'
 import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
-import {chmod, mkdtemp, open, readdir, readFile, rm, stat, unlink} from 'fs/promises'
 import fse from 'fs-extra'
+import {chmod, mkdtemp, open, readdir, readFile, rm, stat, unlink} from 'fs/promises'
 import {decompress} from 'fzstd'
 import got, {type Got, HTTPError} from 'got'
-import {Server} from 'http'
+import {createServer, Server} from 'http'
+import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
 import {clone, sum, template} from 'lodash-es'
 import morgan from 'morgan'
@@ -176,14 +177,13 @@ export class Cluster {
     app.use('/measure', MeasureRoute)
     let server: Server
     if (https) {
-      /* eslint-disable @typescript-eslint/no-var-requires */
-      server = require('http2').createSecureServer({
+      server = createSecureServer({
         key: readFileSync(join(this.cacheDir, 'key.pem'), 'utf8'),
         cert: readFileSync(join(this.cacheDir, 'cert.pem'), 'utf8'),
         allowHTTP1: true,
-      }, app)
+      }, app) as unknown as Server
     } else {
-      server = require('http').createServer(app)
+      server = createServer(app)
       /* eslint-enable @typescript-eslint/no-var-requires */
     }
     this.server = server
