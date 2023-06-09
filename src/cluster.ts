@@ -19,6 +19,7 @@ import {cwd} from 'process'
 import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
+import {fileURLToPath} from 'url'
 import {validateFile} from './file.js'
 import MeasureRoute from './measure.route.js'
 import {hashToFilename} from './util.js'
@@ -31,6 +32,8 @@ interface ICounters {
   hits: number
   bytes: number
 }
+
+const __dirname = fileURLToPath(new URL('..', import.meta.url))
 
 export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}

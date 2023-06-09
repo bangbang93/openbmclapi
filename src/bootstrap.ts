@@ -2,7 +2,10 @@ import colors from 'colors/safe.js'
 import {HTTPError} from 'got'
 import ms from 'ms'
 import {join} from 'path'
+import {fileURLToPath} from 'url'
 import {Cluster} from './cluster.js'
+
+const __dirname = fileURLToPath(new URL('..', import.meta.url))
 
 export async function bootstrap(version: string): Promise<void> {
   console.log(colors.green(`booting openbmclapi ${version}`))
