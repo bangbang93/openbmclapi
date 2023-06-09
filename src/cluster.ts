@@ -4,8 +4,8 @@ import {ChildProcess, spawn} from 'child_process'
 import colors from 'colors/safe.js'
 import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
-import fse from 'fs-extra'
 import {chmod, mkdtemp, open, readdir, readFile, rm, stat, unlink} from 'fs/promises'
+import fse from 'fs-extra'
 import {decompress} from 'fzstd'
 import got, {type Got, HTTPError} from 'got'
 import {Server} from 'http'
@@ -19,6 +19,7 @@ import {cwd} from 'process'
 import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
+import {fileURLToPath} from 'url'
 import {validateFile} from './file.js'
 import MeasureRoute from './measure.route.js'
 import {hashToFilename} from './util.js'
@@ -31,6 +32,8 @@ interface ICounters {
   hits: number
   bytes: number
 }
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}
@@ -194,17 +197,17 @@ export class Cluster {
     const dir = await mkdtemp(join(tmpdir(), 'openbmclapi'))
     const confFile = `${dir}/nginx/nginx.conf`
     const templateFile = 'nginx.conf'
-    const confTemplate = await readFile(join(process.cwd(), 'nginx', templateFile), 'utf8')
+    const confTemplate = await readFile(join(__dirname, '..', 'nginx', templateFile), 'utf8')
     console.log('nginx conf', confFile)
 
-    await fse.copy(join(process.cwd(), 'nginx'), dirname(confFile), {recursive: true, overwrite: true})
+    await fse.copy(join(__dirname, '..', 'nginx'), dirname(confFile), {recursive: true, overwrite: true})
     await fse.outputFile(confFile, template(confTemplate)({
       root: pwd,
       port: appPort,
       ssl: proto === 'https',
     }))
 
-    const logFile = join(process.cwd(), 'access.log')
+    const logFile = join(__dirname, '..', 'access.log')
     const logFd = await open(logFile, 'a')
     await fse.ftruncate(logFd.fd)
 
