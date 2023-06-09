@@ -1,4 +1,4 @@
-import colors from 'colors/safe'
+import colors from 'colors/safe.js'
 import {HTTPError} from 'got'
 import ms from 'ms'
 import {join} from 'path'

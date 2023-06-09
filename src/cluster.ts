@@ -1,16 +1,16 @@
-import {type schema, Type} from 'avsc'
+import avsc, {type schema} from 'avsc'
 import Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
-import colors from 'colors/safe'
+import colors from 'colors/safe.js'
 import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
-import {chmod, copy, ftruncate, mkdtemp, open, outputFile, pathExists, readdir, readFile, stat, unlink} from 'fs-extra'
-import {rm} from 'fs/promises'
+import {chmod, mkdtemp, open, readdir, readFile, rm, stat, unlink} from 'fs/promises'
+import fse from 'fs-extra'
 import {decompress} from 'fzstd'
 import got, {type Got, HTTPError} from 'got'
 import {Server} from 'http'
 import http2Express from 'http2-express-bridge'
-import {clone, sum, template} from 'lodash'
+import {clone, sum, template} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
 import {tmpdir} from 'os'
@@ -78,7 +78,7 @@ export class Cluster {
   }
 
   public async getFileList(): Promise<IFileList> {
-    const FileListSchema = Type.forSchema({
+    const FileListSchema = avsc.Type.forSchema({
       type: 'array',
       items: {
         type: 'record',
@@ -101,8 +101,9 @@ export class Cluster {
 
   public async syncFiles(fileList: IFileList): Promise<void> {
     const files = await Bluebird.filter(fileList.files, async (file) => {
-      const path = join(this.cacheDir, file.hash.substr(0, 2), file.hash)
-      return !await pathExists(path)
+      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+      const path = join(this.cacheDir, file.hash.substring(0, 2), file.hash)
+      return !await fse.pathExists(path)
     })
     const totalSize = sum(files.map((file) => file.size))
     const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
@@ -127,7 +128,7 @@ export class Cluster {
       if (!isFileCorrect) {
         throw new Error(`文件${file.path}校验失败`)
       }
-      await outputFile(path, res.body)
+      await fse.outputFile(path, res.body)
     }
     await this.gc(fileList)
   }
@@ -142,7 +143,7 @@ export class Cluster {
       try {
         const hash = req.params.hash
         const path = join(this.cacheDir, hash.substr(0, 2), hash)
-        if (!await pathExists(path)) {
+        if (!await fse.pathExists(path)) {
           await this.downloadFile(hash)
         }
         const name = req.query.name as string
@@ -197,8 +198,8 @@ export class Cluster {
     const confTemplate = await readFile(join(__dirname, '..', 'nginx', templateFile), 'utf8')
     console.log('nginx conf', confFile)
 
-    await copy(join(__dirname, '..', 'nginx'), dirname(confFile), {recursive: true, overwrite: true})
-    await outputFile(confFile, template(confTemplate)({
+    await fse.copy(join(__dirname, '..', 'nginx'), dirname(confFile), {recursive: true, overwrite: true})
+    await fse.outputFile(confFile, template(confTemplate)({
       root: pwd,
       port: appPort,
       ssl: proto === 'https',
@@ -206,10 +207,10 @@ export class Cluster {
 
     const logFile = join(__dirname, '..', 'access.log')
     const logFd = await open(logFile, 'a')
-    await ftruncate(logFd)
+    await fse.ftruncate(logFd.fd)
 
     this.nginxProcess = spawn('nginx', ['-c', confFile], {
-      stdio: [null, logFd, 'inherit'],
+      stdio: [null, logFd.fd, 'inherit'],
     })
 
     const tail = new Tail(logFile)
@@ -231,7 +232,7 @@ export class Cluster {
     })
 
     this.interval = setInterval(async () => {
-      await ftruncate(logFd)
+      await fse.ftruncate(logFd.fd)
     }, ms('60s'))
   }
 
@@ -301,7 +302,7 @@ export class Cluster {
     })
 
     const path = join(this.cacheDir, this.hashToFilename(hash))
-    await outputFile(path, res.body)
+    await fse.outputFile(path, res.body)
   }
 
   public async keepAlive(): Promise<boolean> {
@@ -329,8 +330,8 @@ export class Cluster {
         resolve(cert)
       })
     })
-    await outputFile(join(this.cacheDir, 'cert.pem'), cert.cert)
-    await outputFile(join(this.cacheDir, 'key.pem'), cert.key)
+    await fse.outputFile(join(this.cacheDir, 'cert.pem'), cert.cert)
+    await fse.outputFile(join(this.cacheDir, 'key.pem'), cert.key)
   }
 
   public exit(code: number = 0): never {

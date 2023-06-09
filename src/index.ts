@@ -2,10 +2,10 @@ import cluster from 'cluster'
 import {config} from 'dotenv'
 import {readFileSync} from 'fs'
 import ms from 'ms'
-import {join} from 'path'
+import {fileURLToPath} from 'url'
 import {bootstrap} from './bootstrap.js'
 
-const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'))
+const packageJson = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'))
 
 config()
 if (process.env.NO_DAEMON || !cluster.isPrimary) {
