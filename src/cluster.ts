@@ -218,6 +218,7 @@ export class Cluster {
     if (!process.env.DISABLE_ACCESS_LOG) {
       tail.on('line', (line: string) => {
         process.stdout.write(line)
+        process.stdout.write('\n')
       })
     }
     // eslint-disable-next-line max-len
