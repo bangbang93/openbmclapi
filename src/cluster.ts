@@ -184,7 +184,6 @@ export class Cluster {
       }, app) as unknown as Server
     } else {
       server = createServer(app)
-      /* eslint-enable @typescript-eslint/no-var-requires */
     }
     this.server = server
 
