@@ -2,7 +2,7 @@
   "name": "openbmclapi",
   "version": "1.6.7",
   "description": "bmclapi@home",
-  "bin": "dist/index.js",
+  "bin": "dist/openbmclapi.js",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "build": "rm -rf dist && tsc",
     "build:esbuild": "esbuild --bundle --platform=node --sourcemap --outfile=dist/openbmclapi.js src/index.ts",
     "dev": "tsc-watch --onSuccess \"node dist/index.js\"",
-    "pkg": "npm run build:esbuild && pkg dist/openbmclapi.js -C Gzip",
+    "pkg": "pkg . -C Gzip",
     "lint": "eslint . --ext .ts"
   },
   "repository": {
