@@ -51,6 +51,9 @@ export async function bootstrap(version: string): Promise<void> {
     cluster.exit(1)
   }
   console.log(colors.rainbow(`done, serving ${files.files.length} files`))
+  if (process.env.NODE_UNIQUE_ID && typeof process.send === 'function') {
+    process.send('ready')
+  }
 
   let checkFileInterval = setTimeout(checkFile, ms('10m'))
   async function checkFile(): Promise<void> {

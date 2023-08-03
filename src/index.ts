@@ -1,7 +1,6 @@
 import cluster from 'cluster'
 import {config} from 'dotenv'
 import {readFileSync} from 'fs'
-import ms from 'ms'
 import {fileURLToPath} from 'url'
 import {bootstrap} from './bootstrap.js'
 
@@ -21,10 +20,18 @@ if (!process.env.NO_DEMAON && cluster.isPrimary) {
   forkWorker()
 }
 
+const BACKOFF_FACTOR = 2
+let backoff = 1
+
 function forkWorker(): void {
   const worker = cluster.fork()
   worker.on('exit', () => {
-    console.log(`工作进程 ${worker.id} 异常退出，60秒后重启`)
-    setTimeout(() => forkWorker(), ms('60s'))
+    console.log(`工作进程 ${worker.id} 异常退出，${backoff}秒后重启`)
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    setTimeout(() => forkWorker(), backoff * 1000)
+    backoff = Math.max(backoff * BACKOFF_FACTOR, 60)
+  })
+  worker.on('ready', () => {
+    backoff = 1
   })
 }
