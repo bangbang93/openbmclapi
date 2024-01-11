@@ -1,4 +1,4 @@
-FROM node:18-alpine AS install
+FROM node:20-alpine AS install
 
 WORKDIR /opt/openbmclapi
 RUN apk add build-base
@@ -7,7 +7,7 @@ RUN npm ci
 COPY src ./src
 RUN npm run build
 
-FROM node:18-bullseye-slim AS build
+FROM node:20-bullseye-slim AS build
 
 RUN apt-get update && \
     apt-get install -y nginx tini
