@@ -1,3 +1,4 @@
+import {decompress} from '@mongodb-js/zstd'
 import avsc, {type schema} from 'avsc'
 import Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
@@ -6,7 +7,6 @@ import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
 import fse from 'fs-extra'
 import {chmod, mkdtemp, open, readdir, readFile, rm, stat, unlink} from 'fs/promises'
-import {decompress} from 'fzstd'
 import got, {type Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
@@ -98,7 +98,7 @@ export class Cluster {
       responseType: 'buffer',
       cache: this.requestCache,
     })
-    const decompressed = decompress(res.body)
+    const decompressed = await decompress(res.body)
     return {
       files: FileListSchema.fromBuffer(Buffer.from(decompressed)),
     }
