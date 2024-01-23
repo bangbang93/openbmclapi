@@ -29,7 +29,7 @@ function forkWorker(): void {
     console.log(`工作进程 ${worker.id} 异常退出，${backoff}秒后重启`)
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     setTimeout(() => forkWorker(), backoff * 1000)
-    backoff = Math.max(backoff * BACKOFF_FACTOR, 60)
+    backoff = Math.min(backoff * BACKOFF_FACTOR, 60)
   })
   worker.on('ready', () => {
     backoff = 1
