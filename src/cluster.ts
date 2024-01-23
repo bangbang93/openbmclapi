@@ -11,7 +11,7 @@ import got, {type Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
-import {clone, sum, template} from 'lodash-es'
+import {clone, min, sum, template} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
 import {tmpdir} from 'os'
@@ -159,11 +159,14 @@ export class Cluster {
         }
         res.set('x-bmclapi-hash', hash)
         return res.sendFile(path, {maxAge: '30d'}, (err) => {
+          let bytes = res.socket?.bytesWritten ?? 0
           if (!err || err?.message === 'Request aborted' || err?.message === 'write EPIPE') {
             const header = res.getHeader('content-length')
             if (header) {
-              this.counters.bytes += parseInt(header.toString(), 10) || 0
+              const contentLength = parseInt(header.toString(), 10)
+              bytes = min([bytes, contentLength]) ?? 0
             }
+            this.counters.bytes += bytes
             this.counters.hits++
           } else {
             if (err) return next(err)
