@@ -1,0 +1,24 @@
+name: 'Sync Mirror'
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan gitlab.bangbang93.com >> ~/.ssh/known_hosts
+          echo "$MIRROR_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          git remote add gitlab git@gitlab.bangbang93.com:bmclapi/openbmclapi.git
+          git push gitlab HEAD:master --force
+          git push gitlab --tags --force
+        env:
+          MIRROR_SSH_KEY: ${{ secrets.MIRROR_SSH_KEY }}
