@@ -109,6 +109,7 @@ export class Cluster {
       const path = join(this.cacheDir, hashToFilename(file.hash))
       return !await fse.pathExists(path)
     })
+    console.log(`mismatch ${missingFiles.length} files, start syncing`)
     const totalSize = sum(missingFiles.map((file) => file.size))
     const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
       total: totalSize,
