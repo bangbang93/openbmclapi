@@ -115,12 +115,12 @@ export class Cluster {
       total: totalSize,
       width: 80,
     })
-    for (const file of missingFiles) {
+    for (const [i, file] of missingFiles.entries()) {
       const path = join(this.cacheDir, file.hash.substring(0, 2), file.hash)
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       } else {
-        console.log(`${colors.green('downloading')} ${colors.underline(file.path)}`)
+        console.log(`[${i + 1}/${missingFiles.length}] ${colors.green('downloading')} ${colors.underline(file.path)}`)
       }
       let lastProgress = 0
       const res = await this.got.get<Buffer>(file.path.substring(1), {
