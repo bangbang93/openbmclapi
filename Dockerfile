@@ -10,7 +10,7 @@ RUN npm run build
 FROM node:20-bullseye-slim AS build
 
 RUN apt-get update && \
-    apt-get install -y nginx tini
+    apt-get install -y nginx tini trickle
 
 WORKDIR /opt/openbmclapi
 COPY package-lock.json package.json ./

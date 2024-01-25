@@ -32,6 +32,14 @@ docker pull registry.bangbang93.com/bmclapi/openbmclapi
 
 如果你在源码中发现了其他环境变量，那么它们是为了方便开发而存在的，可能会随时修改，不要在生产环境中使用
 
+## 速度限制
+如果使用docker启动进程，可以将cmd设置为`tinc -- trickle -u 10240 node --enable-source-maps dist/index`来限制速度。
+此处-u 10240表示限制**上传**速度为10MB/s。
+
+非docker环境可以在宿主机上安装trickle，然后使用trickle来启动nodejs进程，一般的Linux包管理均可直接安装trickle。
+
+具体高级使用方式可以参考trickle的文档
+
 
 ### 安装包
  从 [Github Release](https://github.com/bangbang93/openbmclapi/releases) 中选择对应你的系统的最新版本
@@ -67,4 +75,4 @@ CLUSTER_ID和CLUSTER_SECRET请联系我获取
 
 ### 同步数据
 openbmclapi会自行同步需要的文件，但是初次同步可能会速度过慢，如果您的节点是个全量节点，可以通过以下命令使用rsync快速同步
-~~`rsync -azvP openbmclapi@jp.bmclapi.933.moe::openbmclapi cache`~~ 由于没有空闲节点，该命令暂时不可用
+`rsync -azvP openbmclapi@home.933.moe::openbmclapi cache`
