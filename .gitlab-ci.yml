@@ -20,10 +20,14 @@ docker:
     DOCKER_DRIVER: overlay2
   only: [master]
   script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $CI_REGISTRY_IMAGE || true
-    - docker build --cache-from=$CI_REGISTRY_IMAGE -t $CI_REGISTRY_IMAGE .
-    - docker push $CI_REGISTRY_IMAGE
+    - docker buildx create --use
+    - |
+      docker buildx build \
+        --cache-from type=registry,ref=$CI_REGISTRY_IMAGE/cache \
+        --cache-to type=registry,ref=$CI_REGISTRY_IMAGE/cache,mode=max \
+        --tag $CI_REGISTRY_IMAGE \
+        --push \
+        .
 
 docker-tag:
   stage: deploy
@@ -36,7 +40,11 @@ docker-tag:
     DOCKER_DRIVER: overlay2
   only: [ tags ]
   script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG || true
-    - docker build --cache-from=$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    - docker buildx create --use
+    - |
+        docker buildx build \
+        --cache-from type=registry,ref=$CI_REGISTRY_IMAGE/cache:$CI_COMMIT_TAG \
+        --cache-to type=registry,ref=$CI_REGISTRY_IMAGE/cache:$CI_COMMIT_TAG,mode=max \
+        --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG \
+        --push \
+        .
