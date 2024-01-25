@@ -36,6 +36,7 @@
     "lodash-es": "^4.17.21",
     "morgan": "^1.9.1",
     "ms": "^2.1.2",
+    "p-map": "^7.0.1",
     "progress": "^2.0.3",
     "socket.io-client": "^4.5.1",
     "tail": "^2.2.6"

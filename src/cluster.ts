@@ -15,6 +15,7 @@ import {clone, min, sum, template} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
 import {tmpdir} from 'os'
+import pMap from 'p-map'
 import {dirname, join, sep} from 'path'
 import {cwd} from 'process'
 import ProgressBar from 'progress'
@@ -120,7 +121,7 @@ export class Cluster {
     })
     const parallel = parseInt(process.env.SYNC_PARALLEL ?? '1', 10) || 1
     const noopen = process.env.FORCE_NOOPEN === 'true' && parallel === 1 ? '1' : ''
-    await Bluebird.map(missingFiles, async (file, i) => {
+    await pMap(missingFiles, async (file, i) => {
       const path = join(this.cacheDir, file.hash.substring(0, 2), file.hash)
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
