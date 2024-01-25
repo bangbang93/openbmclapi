@@ -248,7 +248,7 @@ export class Cluster {
         return
       }
       this.counters.hits++
-      this.counters.bytes += parseInt(match.groups?.size ?? '0', 10)
+      this.counters.bytes += parseInt(match.groups?.size ?? '0', 10) || 0
     })
 
     this.interval = setInterval(async () => {
