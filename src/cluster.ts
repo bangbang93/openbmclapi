@@ -118,7 +118,9 @@ export class Cluster {
       total: totalSize,
       width: 80,
     })
-    for (const [i, file] of missingFiles.entries()) {
+    const parallel = parseInt(process.env.SYNC_PARALLEL ?? '1', 10) || 1
+    const noopen = process.env.FORCE_NOOPEN === 'true' && parallel === 1 ? '1' : ''
+    await Bluebird.map(missingFiles, async (file, i) => {
       const path = join(this.cacheDir, file.hash.substring(0, 2), file.hash)
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
@@ -128,7 +130,7 @@ export class Cluster {
       let lastProgress = 0
       const res = await this.got.get<Buffer>(file.path.substring(1), {
         searchParams: {
-          noopen: process.env.FORCE_NOOPEN === 'true' ? 1 : '',
+          noopen,
         },
         retry: {
           limit: 10,
@@ -143,7 +145,9 @@ export class Cluster {
         throw new Error(`文件${file.path}校验失败`)
       }
       await fse.outputFile(path, res.body)
-    }
+    }, {
+      concurrency: parallel,
+    })
     await this.gc(fileList)
   }
 
