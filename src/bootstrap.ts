@@ -78,7 +78,6 @@ export async function bootstrap(version: string): Promise<void> {
     if (stopping) process.exit(0)
 
     stopping = true
-    clearTimeout(cluster.keepAliveInterval)
     clearTimeout(checkFileInterval)
     if (cluster.interval) {
       clearInterval(cluster.interval)

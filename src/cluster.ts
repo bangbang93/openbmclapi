@@ -306,6 +306,7 @@ export class Cluster {
   }
 
   public async disable(): Promise<void> {
+    clearTimeout(this.keepAliveInterval)
     return new Promise((resolve, reject) => {
       this.io?.emit('disable', null, ([err, ack]: [unknown, unknown]) => {
         this.isEnabled = false
