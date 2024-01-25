@@ -9,7 +9,6 @@ docker run -d \
 -e CLUSTER_ID=${CLUSTER_ID} \
 -e CLUSTER_SECRET=${CLUSTER_SECRET} \
 -e CLUSTER_PUBLIC_PORT=${CLUSTER_PORT} \
--e CLUSTER_IP=example.com \
 -v /data/openbmclapi:/opt/openbmclapi/cache \
 -p ${CLUSTER_PORT}:4000 \
 --restart always \
@@ -20,7 +19,19 @@ bangbang93/openbmclapi
 docker pull registry.bangbang93.com/bmclapi/openbmclapi
 ```
 
-若要使用不同端口，请添加CLUSTER_PUBLIC_PORT环境变量以修改上报端口
+## 配置
+| 环境变量                | 必填 | 默认值          | 说明                                                                                                  |
+|---------------------|----|--------------|-----------------------------------------------------------------------------------------------------|
+| CLUSTER_ID          | 是  | -            | 集群ID                                                                                                |
+| CLUSTER_SECRET      | 是  | -            | 集群密钥                                                                                                |
+| CLUSTER_IP          | 否  | 出口IP         | 集群IP                                                                                                |
+| CLUSTER_PORT        | 否  | 4000         | 监听端口                                                                                                |
+| CLUSTER_PUBLIC_PORT | 否  | CLUSTER_PORT | 对外端口                                                                                                |
+| CLUSTER_BYOC        | 否  | false        | 是否使用自定义域名,(BYOC=Bring you own certificate),当使用国内服务器需要备案时，需要启用这个参数来使用你自己的域名，并且你需要自己提供ssl termination |
+| ENABLE_NGINX        | 否  | false        | 使用nginx提供文件服务                                                                                       |
+
+如果你在源码中发现了其他环境变量，那么它们是为了方便开发而存在的，可能会随时修改，不要在生产环境中使用
+
 
 ### 安装包
  从 [Github Release](https://github.com/bangbang93/openbmclapi/releases) 中选择对应你的系统的最新版本
