@@ -33,7 +33,7 @@ docker pull registry.bangbang93.com/bmclapi/openbmclapi
 如果你在源码中发现了其他环境变量，那么它们是为了方便开发而存在的，可能会随时修改，不要在生产环境中使用
 
 ## 速度限制
-如果使用docker启动进程，可以将cmd设置为`tinc -- trickle -u 10240 node --enable-source-maps dist/index`来限制速度。
+如果使用docker启动进程，可以将cmd设置为`trickle -s -u 10240 node --enable-source-maps dist/index`来限制速度。
 此处-u 10240表示限制**上传**速度为10MB/s。
 
 非docker环境可以在宿主机上安装trickle，然后使用trickle来启动nodejs进程，一般的Linux包管理均可直接安装trickle。
