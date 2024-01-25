@@ -20,6 +20,7 @@ docker:
     DOCKER_DRIVER: overlay2
   only: [master]
   script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker buildx create --use
     - |
       docker buildx build \
@@ -40,6 +41,7 @@ docker-tag:
     DOCKER_DRIVER: overlay2
   only: [ tags ]
   script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker buildx create --use
     - |
         docker buildx build \
