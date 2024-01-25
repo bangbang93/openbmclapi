@@ -390,7 +390,7 @@ export class Cluster {
           await this.disable()
           await this.enable()
         })
-          .timeout(ms('30s'), 'restart timeout')
+          .timeout(ms('10m'), 'restart timeout')
           .catch((e) => {
             console.error(e, 'restart failed')
             this.exit(1)
