@@ -1,0 +1,14 @@
+version: '3'
+services:
+  openbmclapi:
+    build: .
+    env_file:
+      - .env
+    volumes:
+    - ./cache:/opt/openbmclapi/cache
+    network_mode: host
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100m'
+        max-file: '10'

@@ -16,7 +16,7 @@ import morgan from 'morgan'
 import ms from 'ms'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
-import {dirname, join, sep} from 'path'
+import {basename, dirname, join, sep} from 'path'
 import {cwd} from 'process'
 import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
@@ -155,6 +155,25 @@ export class Cluster {
   public setupExpress(https: boolean): Server {
     const app = http2Express(express)
     app.enable('trust proxy')
+
+    app.get('/auth', async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const oldUrl = req.get('x-original-uri')
+        if (!oldUrl) return res.status(403).send('invalid sign')
+
+        const url = new URL(oldUrl, 'http://localhost')
+        const hash = basename(url.pathname)
+        const query = Object.fromEntries(url.searchParams.entries())
+        const signValid = checkSign(hash, this.clusterSecret, query)
+        if (!signValid) {
+          return res.status(403).send('invalid sign')
+        }
+        res.sendStatus(204)
+      } catch (e) {
+        return next(e)
+      }
+    })
+
     if (!process.env.DISABLE_ACCESS_LOG) {
       app.use(morgan('combined'))
     }
