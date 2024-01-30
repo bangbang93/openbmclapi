@@ -24,7 +24,7 @@ import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
 import {validateFile} from './file.js'
 import MeasureRoute from './measure.route.js'
-import {hashToFilename} from './util.js'
+import {checkSign, hashToFilename} from './util.js'
 
 interface IFileList {
   files: {path: string; hash: string; size: number}[]
@@ -161,6 +161,11 @@ export class Cluster {
     app.get('/download/:hash(\\w+)', async (req: Request, res: Response, next: NextFunction) => {
       try {
         const hash = req.params.hash.toLowerCase()
+        const signValid = checkSign(hash, this.clusterSecret, req.query as NodeJS.Dict<string>)
+        if (!signValid) {
+          return res.status(403).send('invalid sign')
+        }
+
         const path = join(this.cacheDir, hashToFilename(hash))
         if (!await fse.pathExists(path)) {
           await this.downloadFile(hash)
