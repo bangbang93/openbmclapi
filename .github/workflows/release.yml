@@ -1,9 +1,9 @@
 name: "Release Binary"
 
-on: {}
-#  push:
-#    tags:
-#      - "v*"
+on:
+  push:
+    tags:
+      - "v*"
 
 jobs:
   tagged-release:
@@ -16,12 +16,12 @@ jobs:
         with:
           node-version: '16'
       - run: npm ci
-      - run: |
-          npm run build:esbuild
-          npm run pkg
+#      - run: |
+#          npm run build:esbuild
+#          npm run pkg
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
-          files: |
-            pkg/**
+#          files: |
+#            pkg/**
