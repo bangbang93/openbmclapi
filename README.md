@@ -47,7 +47,7 @@ docker pull registry.bangbang93.com/bmclapi/openbmclapi
 git clone https://github.com/bangbang93/openbmclapi
 cd openbmclapi
 npm ci
-npx ts-node src
+npx tsx src
 ```
  3. 如果你看到了`missing CLUSTER_PORT`的报错，说明一切正常，该设置参数了
 
