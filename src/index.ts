@@ -16,7 +16,7 @@ if (process.env.NO_DAEMON || !cluster.isPrimary) {
     })
 }
 
-if (!process.env.NO_DEMAON && cluster.isPrimary) {
+if (!process.env.NO_DAEMON && cluster.isPrimary) {
   forkWorker()
 }
 
