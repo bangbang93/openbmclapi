@@ -6,7 +6,7 @@ import colors from 'colors/safe.js'
 import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
 import fse from 'fs-extra'
-import {chmod, mkdtemp, open, readdir, readFile, rm, stat, unlink} from 'fs/promises'
+import {mkdtemp, open, readdir, readFile, rm, stat, unlink} from 'fs/promises'
 import got, {type Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
@@ -14,6 +14,7 @@ import http2Express from 'http2-express-bridge'
 import {clone, min, sum, template} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
+import {userInfo} from 'node:os'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
 import {basename, dirname, join, sep} from 'path'
@@ -234,7 +235,7 @@ export class Cluster {
   }
 
   public async setupNginx(pwd: string, appPort: number, proto: string): Promise<void> {
-    this._port = join(this.cacheDir, 'openbmclapi.sock')
+    this._port = '/tmp/openbmclapi.sock'
     await rm(this._port, {force: true})
     const dir = await mkdtemp(join(tmpdir(), 'openbmclapi'))
     const confFile = `${dir}/nginx/nginx.conf`
@@ -247,6 +248,8 @@ export class Cluster {
       root: pwd,
       port: appPort,
       ssl: proto === 'https',
+      sock: this._port,
+      user: userInfo().username,
     }))
 
     const logFile = join(__dirname, '..', 'access.log')
@@ -288,10 +291,6 @@ export class Cluster {
       }
       this.server.listen(this._port, resolve)
     })
-    if (typeof this._port === 'string') {
-      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-      await chmod(this._port, 0o777)
-    }
   }
 
   public async connect(): Promise<void> {

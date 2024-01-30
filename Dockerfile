@@ -14,7 +14,7 @@ RUN apt-get update && \
 
 WORKDIR /opt/openbmclapi
 COPY package-lock.json package.json ./
-RUN npm ci --prod
+RUN npm ci --omit=dev
 
 COPY --from=install /opt/openbmclapi/dist ./dist
 COPY nginx/ /opt/openbmclapi/nginx
