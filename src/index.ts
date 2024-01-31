@@ -31,7 +31,9 @@ function forkWorker(): void {
     setTimeout(() => forkWorker(), backoff * 1000)
     backoff = Math.min(backoff * BACKOFF_FACTOR, 60)
   })
-  worker.on('ready', () => {
-    backoff = 1
+  worker.on('message', (msg: unknown) => {
+    if (msg === 'ready') {
+      backoff = 1
+    }
   })
 }

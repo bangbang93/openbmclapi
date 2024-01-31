@@ -1,3 +1,4 @@
+import nodeCluster from 'cluster'
 import colors from 'colors/safe.js'
 import {HTTPError} from 'got'
 import ms from 'ms'
@@ -51,7 +52,7 @@ export async function bootstrap(version: string): Promise<void> {
     cluster.exit(1)
   }
   console.log(colors.rainbow(`done, serving ${files.files.length} files`))
-  if (process.env.NODE_UNIQUE_ID && typeof process.send === 'function') {
+  if (nodeCluster.isWorker && typeof process.send === 'function') {
     process.send('ready')
   }
 
