@@ -2,8 +2,8 @@ name: "Release Binary"
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - feature/nexe
 
 jobs:
   tagged-release:
@@ -21,11 +21,17 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: tar -czvf openbmclapi-${{ matrix.os }}.tar.gz dist nginx package.json node_modules
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: openbmclapi-${{ matrix.os }}.tar.gz
+      - run: |
+          npm run build:sea
+          tar -czvf openbmclapi-${{ matrix.os }}-sea.tar.gz openbmclapi
+      - run: ls -l
+#      - uses: "marvinpinto/action-automatic-releases@latest"
+#        with:
+#          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+#          prerelease: false
+#          files: |
+#            openbmclapi-${{ matrix.os }}.tar.gz
+#            openbmclapi-${{ matrix.os }}-sea.tar.gz
 
 
 

@@ -2,15 +2,14 @@
   "name": "openbmclapi",
   "version": "1.7.1",
   "description": "bmclapi@home",
-  "bin": "dist/openbmclapi.js",
+  "bin": "dist/index.js",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "true",
     "build": "rm -rf dist && tsc",
-    "build:esbuild": "esbuild --bundle --platform=node --sourcemap --outfile=dist/openbmclapi.js src/index.ts",
+    "build:sea": "npx nexe dist/index.js --build",
     "dev": "tsc-watch --onSuccess \"node dist/index.js\"",
-    "pkg": "pkg . -C Gzip",
     "lint": "eslint . --ext .ts"
   },
   "repository": {
@@ -65,16 +64,5 @@
   },
   "npm": {
     "publish": false
-  },
-  "pkg": {
-    "outputPath": "pkg",
-    "targets": [
-      "node16-linux",
-      "node16-macos",
-      "node16-windows"
-    ],
-    "assets": [
-      "node_modules/**/*.node"
-    ]
   }
 }
