@@ -25,7 +25,7 @@ jobs:
       - run: |
           npm run build:sea
           tar -czvf openbmclapi-${OS}-sea.tar.gz openbmclapi
-      - uses: "actions/cache@v3"
+      - uses: "actions/cache@v4"
         with:
           path: |
             ~/.cache
