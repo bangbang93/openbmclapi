@@ -458,7 +458,7 @@ export class Cluster {
       if (!dir) break
       const entries = await readdir(dir)
       for (const entry of entries) {
-        if (entry.endsWith('.pem') || entry.endsWith('.sock')) continue
+        if (entry.endsWith('.pem')) continue
         const p = join(dir, entry)
         const s = await stat(p)
         if (s.isDirectory()) {
