@@ -20,7 +20,7 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm run build
-      - run: echo "OS=${$RUNNER_OS,,}" >>${GITHUB_ENV}
+      - run: echo "OS=${RUNNER_OS,,}" >>${GITHUB_ENV}
       - run: tar -czvf openbmclapi-${OS}.tar.gz dist nginx package.json node_modules
       - run: |
           npm run build:sea
