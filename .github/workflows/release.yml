@@ -14,30 +14,31 @@ jobs:
     runs-on: "ubuntu-latest"
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - run: npm ci
       - run: npm run build
-      - run: tar -czvf openbmclapi-${{ matrix.os }}.tar.gz dist nginx package.json node_modules
+      - run: echo "OS=${$RUNNER_OS,,}" >>${GITHUB_ENV}
+      - run: tar -czvf openbmclapi-${OS}.tar.gz dist nginx package.json node_modules
       - run: |
           npm run build:sea
-          tar -czvf openbmclapi-${{ matrix.os }}-sea.tar.gz openbmclapi
-      - uses: "actions/cache@v2"
+          tar -czvf openbmclapi-${OS}-sea.tar.gz openbmclapi
+      - uses: "actions/cache@v3"
         with:
           path: |
             ~/.cache
             ~/.npm
             ~/.nexe
-          key: ${{ runner.os }}-release-${{ matrix.os }}
+          key: nexec-${OS}-cache
 #      - uses: "marvinpinto/action-automatic-releases@latest"
 #        with:
 #          repo_token: "${{ secrets.GITHUB_TOKEN }}"
 #          prerelease: false
 #          files: |
-#            openbmclapi-${{ matrix.os }}.tar.gz
-#            openbmclapi-${{ matrix.os }}-sea.tar.gz
+#            openbmclapi-${OS}.tar.gz
+#            openbmclapi-${OS}-sea.tar.gz
 
 
 
