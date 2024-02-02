@@ -11,7 +11,7 @@ jobs:
         matrix:
           os: [ubuntu-latest, windows-latest, macos-latest]
     name: "Tagged Release"
-    runs-on: "ubuntu-latest"
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -20,11 +20,10 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm run build
-      - run: echo "OS=${RUNNER_OS,,}" >>${GITHUB_ENV}
-      - run: tar -czvf openbmclapi-${OS}.tar.gz dist nginx package.json node_modules
+      - run: tar -czvf openbmclapi-${{ runner.os }}.tar.gz dist nginx package.json node_modules
       - run: |
           npm run build:sea
-          tar -czvf openbmclapi-${OS}-sea.tar.gz openbmclapi
+          tar -czvf openbmclapi-${{ runner.os }}-sea.tar.gz openbmclapi
       - uses: "actions/cache@v4"
         with:
           path: |
@@ -37,8 +36,8 @@ jobs:
 #          repo_token: "${{ secrets.GITHUB_TOKEN }}"
 #          prerelease: false
 #          files: |
-#            openbmclapi-${OS}.tar.gz
-#            openbmclapi-${OS}-sea.tar.gz
+#            openbmclapi-${{ runner.os }}.tar.gz
+#            openbmclapi-${{ runner.os }}-sea.tar.gz
 
 
 
