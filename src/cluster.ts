@@ -314,8 +314,9 @@ export class Cluster {
 
     const io = this.socket.io
     io.on('reconnect', (attempt: number) => {
-      console.log(`reconnect attempt ${attempt}`)
+      console.log(`在重试${attempt}次后恢复连接`)
       if (this.wantEnable) {
+        console.log('正在尝试重新启用服务')
         this.enable()
           .then(() => console.log('重试连接并且准备就绪'))
           .catch(this.onConnectionError.bind(this, 'reconnect'))
@@ -329,8 +330,8 @@ export class Cluster {
   }
 
   public async enable(): Promise<void> {
-    console.log('enable')
     if (this.isEnabled) return
+    console.log('enable')
     try {
       await this._enable()
       this.isEnabled = true
@@ -437,6 +438,7 @@ export class Cluster {
       } else {
         await Bluebird.try(async () => {
           await this.disable()
+          await this.connect()
           await this.enable()
         })
           .timeout(ms('10m'), 'restart timeout')
