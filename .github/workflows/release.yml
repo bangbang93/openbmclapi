@@ -31,7 +31,7 @@ jobs:
             ~/.cache
             ~/.npm
             ~/.nexe
-          key: nexec-{{ runner.os }}-cache
+          key: nexec-${{ runner.os }}-cache
 #      - uses: "marvinpinto/action-automatic-releases@latest"
 #        with:
 #          repo_token: "${{ secrets.GITHUB_TOKEN }}"
