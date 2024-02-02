@@ -41,6 +41,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export class Cluster {
   public readonly counters: ICounters = {hits: 0, bytes: 0}
   public isEnabled = false
+  public wantEnable = false
   public keepAliveInterval?: NodeJS.Timeout
   public interval?: NodeJS.Timeout
   public nginxProcess?: ChildProcess
@@ -54,7 +55,7 @@ export class Cluster {
   private readonly ua: string
   private readonly got: Got
   private readonly requestCache = new Map()
-  private io?: Socket
+  private socket?: Socket
 
   private server?: Server
 
@@ -294,34 +295,46 @@ export class Cluster {
   }
 
   public async connect(): Promise<void> {
-    if (this.io) return
-    this.io = connect(this.prefixUrl, {
+    if (this.socket) return
+    this.socket = connect(this.prefixUrl, {
       transports: ['websocket'],
       query: {
         clusterId: this.clusterId, clusterSecret: this.clusterSecret,
       },
-      reconnectionAttempts: 10,
     })
-    this.io.on('connect', async () => {
+    this.socket.on('error', this.onConnectionError.bind(this, 'error'))
+    this.socket.on('message', (msg) => console.log(msg))
+    this.socket.on('connect', async () => {
       console.log('connected')
     })
-    this.io.on('message', (msg) => console.log(msg))
-    this.io.on('disconnect', (reason: string) => {
-      console.log(`disconnected: ${reason}`)
+    this.socket.on('disconnect', (reason) => {
+      console.log(`与服务器断开连接: ${reason}`)
       this.isEnabled = false
     })
-    this.io.on('error', this.onConnectionError.bind(this))
-    this.io.on('connect_error', this.onConnectionError.bind(this))
-    this.io.on('reconnect_error', this.onConnectionError.bind(this))
-    this.io.on('connect_timeout', this.onConnectionError.bind(this))
-    this.io.on('reconnect_timeout', this.onConnectionError.bind(this))
+
+    const io = this.socket.io
+    io.on('reconnect', (attempt: number) => {
+      console.log(`reconnect attempt ${attempt}`)
+      if (this.wantEnable) {
+        this.enable()
+          .then(() => console.log('重试连接并且准备就绪'))
+          .catch(this.onConnectionError.bind(this, 'reconnect'))
+      }
+    })
+    io.on('reconnect_error', (err) => {
+      console.log('reconnect_error', err)
+    })
+    io.on('reconnect_failed', this.onConnectionError.bind(this, 'reconnect_failed', new Error('reconnect'
+      + ' failed')))
   }
 
   public async enable(): Promise<void> {
+    console.log('enable')
     if (this.isEnabled) return
     try {
       await this._enable()
       this.isEnabled = true
+      this.wantEnable = true
     } catch (e) {
       console.error(e)
       this.exit(1)
@@ -330,11 +343,12 @@ export class Cluster {
 
   public async disable(): Promise<void> {
     clearTimeout(this.keepAliveInterval)
+    this.wantEnable = false
     return new Promise((resolve, reject) => {
-      this.io?.emit('disable', null, ([err, ack]: [unknown, unknown]) => {
+      this.socket?.emit('disable', null, ([err, ack]: [unknown, unknown]) => {
         this.isEnabled = false
         if (err || ack !== true) return reject(err || ack)
-        this.io?.disconnect()
+        this.socket?.disconnect()
         resolve()
       })
     })
@@ -356,7 +370,7 @@ export class Cluster {
     }
     return new Promise((resolve, reject) => {
       const counters = clone(this.counters)
-      this.io?.emit('keep-alive', {
+      this.socket?.emit('keep-alive', {
         time: new Date(),
         ...counters,
       }, ([err, date]: [unknown, string]) => {
@@ -370,7 +384,7 @@ export class Cluster {
 
   public async requestCert(): Promise<void> {
     const cert = await new Promise<{cert: string; key: string}>((resolve, reject) => {
-      this.io?.emit('request-cert', ([err, cert]: [unknown, {cert: string; key: string}]) => {
+      this.socket?.emit('request-cert', ([err, cert]: [unknown, {cert: string; key: string}]) => {
         if (err) return reject(err)
         resolve(cert)
       })
@@ -388,7 +402,7 @@ export class Cluster {
 
   private async _enable(): Promise<void> {
     return new Bluebird<void>((resolve, reject) => {
-      this.io?.emit('enable', {
+      this.socket?.emit('enable', {
         host: this.host,
         port: this.publicPort,
         version: this.version,
@@ -417,7 +431,7 @@ export class Cluster {
       this.keepAliveError++
       console.error('keep alive error')
       console.error(e)
-      console.log(this.io)
+      console.log(this.socket)
       if (this.keepAliveError >= 5) {
         console.error('exit')
       } else {
@@ -436,8 +450,8 @@ export class Cluster {
     }
   }
 
-  private async onConnectionError(err: Error): Promise<void> {
-    console.error('cannot connect to server', err)
+  private async onConnectionError(event: string, err: Error): Promise<void> {
+    console.error(`${event}: cannot connect to server`, err)
     if (this.server) {
       this.server.close(() => {
         this.exit(1)
