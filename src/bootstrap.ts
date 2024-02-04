@@ -6,11 +6,12 @@ import {join} from 'path'
 import {fileURLToPath} from 'url'
 import {Cluster} from './cluster.js'
 import {config} from './config.js'
+import {logger} from './logger.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export async function bootstrap(version: string): Promise<void> {
-  console.log(colors.green(`booting openbmclapi ${version}`))
+  logger.info(`booting openbmclapi ${version}`)
   const cluster = new Cluster(
     config.clusterId,
     config.clusterSecret,
@@ -18,12 +19,12 @@ export async function bootstrap(version: string): Promise<void> {
   )
 
   const files = await cluster.getFileList()
-  console.log(colors.green(`${files.files.length} files`))
+  logger.info(`${files.files.length} files`)
   try {
     await cluster.syncFiles(files)
   } catch (e) {
     if (e instanceof HTTPError) {
-      console.error(colors.red(e.response.url))
+      logger.error({url: e.response.url}, 'download error')
     }
     throw e
   }
@@ -31,7 +32,7 @@ export async function bootstrap(version: string): Promise<void> {
   cluster.connect()
   const proto = config.byoc ? 'https' : 'http'
   if (proto === 'https') {
-    console.log('请求证书')
+    logger.info('请求证书')
     await cluster.requestCert()
   }
   if (config.enableNginx) {
@@ -46,17 +47,17 @@ export async function bootstrap(version: string): Promise<void> {
     await cluster.listen()
     await cluster.enable()
   } catch (e) {
-    console.error(e)
+    logger.fatal(e)
     cluster.exit(1)
   }
-  console.log(colors.rainbow(`done, serving ${files.files.length} files`))
+  logger.info(colors.rainbow(`done, serving ${files.files.length} files`))
   if (nodeCluster.isWorker && typeof process.send === 'function') {
     process.send('ready')
   }
 
   let checkFileInterval = setTimeout(checkFile, ms('10m'))
   async function checkFile(): Promise<void> {
-    console.log(colors.gray('refresh files'))
+    logger.debug('refresh files')
     try {
       const files = await cluster.getFileList()
       await cluster.syncFiles(files)

@@ -25,6 +25,7 @@ import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
 import {config} from './config.js'
 import {validateFile} from './file.js'
+import {logger} from './logger.js'
 import MeasureRoute from './measure.route.js'
 import {checkSign, hashToFilename} from './util.js'
 
@@ -304,27 +305,29 @@ export class Cluster {
       },
     })
     this.socket.on('error', this.onConnectionError.bind(this, 'error'))
-    this.socket.on('message', (msg) => console.log(msg))
+    this.socket.on('message', (msg) => {
+      logger.info(msg)
+    })
     this.socket.on('connect', async () => {
-      console.log('connected')
+      logger.debug('connected')
     })
     this.socket.on('disconnect', (reason) => {
-      console.log(`与服务器断开连接: ${reason}`)
+      logger.warn(`与服务器断开连接: ${reason}`)
       this.isEnabled = false
     })
 
     const io = this.socket.io
     io.on('reconnect', (attempt: number) => {
-      console.log(`在重试${attempt}次后恢复连接`)
+      logger.info(`在重试${attempt}次后恢复连接`)
       if (this.wantEnable) {
-        console.log('正在尝试重新启用服务')
+        logger.info('正在尝试重新启用服务')
         this.enable()
-          .then(() => console.log('重试连接并且准备就绪'))
+          .then(() => logger.info('重试连接并且准备就绪'))
           .catch(this.onConnectionError.bind(this, 'reconnect'))
       }
     })
     io.on('reconnect_error', (err) => {
-      console.log('reconnect_error', err)
+      logger.error(err, 'reconnect_error')
     })
     io.on('reconnect_failed', this.onConnectionError.bind(this, 'reconnect_failed', new Error('reconnect'
       + ' failed')))
@@ -332,7 +335,7 @@ export class Cluster {
 
   public async enable(): Promise<void> {
     if (this.isEnabled) return
-    console.log('enable')
+    logger.trace('enable')
     try {
       await this._enable()
       this.isEnabled = true
@@ -413,7 +416,7 @@ export class Cluster {
         if (err) return reject(err)
         if (ack !== true) return reject(ack)
         resolve()
-        console.log(colors.rainbow('start doing my job'))
+        logger.info(colors.rainbow('start doing my job'))
         this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
       })
     }).timeout(ms('5m'), '节点注册超时')
@@ -423,10 +426,10 @@ export class Cluster {
     try {
       const status = await Bluebird.try(async () => this.keepAlive()).timeout(ms('10s'), 'keep alive timeout')
       if (!status) {
-        console.log('kicked by server')
+        logger.fatal('kicked by server')
         this.exit(1)
       } else {
-        console.log('keep alive success')
+        logger.trace('keep alive success')
       }
       this.keepAliveError = 0
     } catch (e) {
