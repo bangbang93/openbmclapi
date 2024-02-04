@@ -17,10 +17,11 @@ export async function bootstrap(version: string): Promise<void> {
     version,
   )
 
+  const configuration = await cluster.getConfiguration()
   const files = await cluster.getFileList()
   console.log(colors.green(`${files.files.length} files`))
   try {
-    await cluster.syncFiles(files)
+    await cluster.syncFiles(files, configuration.sync)
   } catch (e) {
     if (e instanceof HTTPError) {
       console.error(colors.red(e.response.url))
@@ -59,7 +60,8 @@ export async function bootstrap(version: string): Promise<void> {
     console.log(colors.gray('refresh files'))
     try {
       const files = await cluster.getFileList()
-      await cluster.syncFiles(files)
+      const configuration = await cluster.getConfiguration()
+      await cluster.syncFiles(files, configuration.sync)
     } finally {
       checkFileInterval = setTimeout(() => {
         checkFile()

@@ -1,4 +1,5 @@
 import dotenv from 'dotenv'
+import {z} from 'zod'
 
 export class Config {
   public static instance: Config
@@ -44,6 +45,15 @@ export class Config {
     return Config.instance
   }
 }
+
+export const OpenbmclapiAgentConfigurationSchema = z.object({
+  sync: z.object({
+    source: z.string(),
+    concurrency: z.number(),
+  }),
+})
+
+export type OpenbmclapiAgentConfiguration = z.infer<typeof OpenbmclapiAgentConfigurationSchema>
 
 dotenv.config()
 

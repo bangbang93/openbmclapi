@@ -39,7 +39,8 @@
     "p-map": "^7.0.1",
     "progress": "^2.0.3",
     "socket.io-client": "^4.7.4",
-    "tail": "^2.2.6"
+    "tail": "^2.2.6",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@bangbang93/eslint-config-recommended": "^0.0.3",
