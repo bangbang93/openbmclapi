@@ -46,8 +46,12 @@ docker pull registry.bangbang93.com/bmclapi/openbmclapi
 ```bash
 git clone https://github.com/bangbang93/openbmclapi
 cd openbmclapi
+## 安装依赖
 npm ci
-npx tsx src
+## 编译
+npm run build
+## 运行
+node dist/index.js
 ```
  3. 如果你看到了`CLUSTER_ID is not set`的报错，说明一切正常，该设置参数了
 
