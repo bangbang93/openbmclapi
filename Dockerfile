@@ -1,13 +1,15 @@
-FROM node:20-alpine AS install
+ARG BASE_IMAGE=node:20-bullseye-slim
+FROM $BASE_IMAGE AS install
 
 WORKDIR /opt/openbmclapi
-RUN apk add build-base
+RUN apt update && \
+    apt install -y build-essential python3
 COPY package-lock.json package.json tsconfig.json ./
 RUN npm ci
 COPY src ./src
 RUN npm run build
 
-FROM node:20-bullseye-slim AS build
+FROM $BASE_IMAGE AS build
 
 RUN apt-get update && \
     apt-get install -y nginx tini
