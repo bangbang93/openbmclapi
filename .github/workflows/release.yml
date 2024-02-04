@@ -6,7 +6,19 @@ on:
       - "v*"
 
 jobs:
-  tagged-release:
+  create-release:
+    runs-on: "ubuntu-latest"
+    name: "Create Release"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+
+  build-tar-ball:
+    needs: "create-release"
+    name: "Build and Tar Ball"
     strategy:
         matrix:
           include:
@@ -16,9 +28,7 @@ jobs:
               artifact_name: "openbmclapi-windows.tar.xz"
             - os: macos-latest
               artifact_name: "openbmclapi-macos.tar.xz"
-    name: "Tagged Release"
     runs-on: "ubuntu-latest"
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
