@@ -23,6 +23,7 @@ import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
+import {config} from './config.js'
 import {validateFile} from './file.js'
 import MeasureRoute from './measure.route.js'
 import {checkSign, hashToFilename} from './util.js'
@@ -65,9 +66,9 @@ export class Cluster {
     private readonly version: string,
   ) {
     if (!clusterId || !clusterSecret) throw new Error('missing config')
-    this.host = process.env.CLUSTER_IP
-    this._port = parseInt(process.env.CLUSTER_PORT ?? '4000', 10)
-    this.publicPort = process.env.CLUSTER_PUBLIC_PORT ? parseInt(process.env.CLUSTER_PUBLIC_PORT, 10) : this._port
+    this.host = config.clusterIp
+    this._port = config.port
+    this.publicPort = config.clusterPublicPort ?? config.port
     this.ua = `openbmclapi-cluster/${version}`
     this.got = got.extend({
       prefixUrl: this.prefixUrl,
@@ -176,7 +177,7 @@ export class Cluster {
       }
     })
 
-    if (!process.env.DISABLE_ACCESS_LOG) {
+    if (!config.disableAccessLog) {
       app.use(morgan('combined'))
     }
     app.get('/download/:hash(\\w+)', async (req: Request, res: Response, next: NextFunction) => {
@@ -262,7 +263,7 @@ export class Cluster {
     })
 
     const tail = new Tail(logFile)
-    if (!process.env.DISABLE_ACCESS_LOG) {
+    if (!config.disableAccessLog) {
       tail.on('line', (line: string) => {
         process.stdout.write(line)
         process.stdout.write('\n')
@@ -294,7 +295,7 @@ export class Cluster {
     })
   }
 
-  public async connect(): Promise<void> {
+  public connect(): void {
     if (this.socket) return
     this.socket = connect(this.prefixUrl, {
       transports: ['websocket'],
@@ -407,7 +408,7 @@ export class Cluster {
         host: this.host,
         port: this.publicPort,
         version: this.version,
-        byoc: process.env.CLUSTER_BYOC === 'true',
+        byoc: config.byoc,
       }, ([err, ack]: [unknown, unknown]) => {
         if (err) return reject(err)
         if (ack !== true) return reject(ack)
@@ -438,7 +439,7 @@ export class Cluster {
       } else {
         await Bluebird.try(async () => {
           await this.disable()
-          await this.connect()
+          this.connect()
           await this.enable()
         })
           .timeout(ms('10m'), 'restart timeout')

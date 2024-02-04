@@ -49,7 +49,7 @@ cd openbmclapi
 npm ci
 npx tsx src
 ```
- 3. 如果你看到了`missing CLUSTER_PORT`的报错，说明一切正常，该设置参数了
+ 3. 如果你看到了`CLUSTER_ID is not set`的报错，说明一切正常，该设置参数了
 
 
 ### 设置参数

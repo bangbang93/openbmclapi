@@ -5,17 +5,15 @@ import ms from 'ms'
 import {join} from 'path'
 import {fileURLToPath} from 'url'
 import {Cluster} from './cluster.js'
+import {config} from './config.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export async function bootstrap(version: string): Promise<void> {
   console.log(colors.green(`booting openbmclapi ${version}`))
-  if (!process.env.CLUSTER_PORT) {
-    throw new Error('missing CLUSTER_PORT')
-  }
   const cluster = new Cluster(
-    process.env.CLUSTER_ID!,
-    process.env.CLUSTER_SECRET!,
+    config.clusterId,
+    config.clusterSecret,
     version,
   )
 
@@ -31,19 +29,19 @@ export async function bootstrap(version: string): Promise<void> {
   }
 
   cluster.connect()
-  const proto = process.env.CLUSTER_BYOC !== 'true' ? 'https' : 'http'
+  const proto = config.byoc ? 'https' : 'http'
   if (proto === 'https') {
     console.log('请求证书')
     await cluster.requestCert()
   }
-  if (process.env.ENABLE_NGINX) {
+  if (config.enableNginx) {
     if (typeof cluster.port === 'number') {
       await cluster.setupNginx(join(__dirname, '..'), cluster.port, proto)
     } else {
       throw new Error('cluster.port is not a number')
     }
   }
-  const server = cluster.setupExpress(proto === 'https' && !process.env.ENABLE_NGINX)
+  const server = cluster.setupExpress(proto === 'https' && !config.enableNginx)
   try {
     await cluster.listen()
     await cluster.enable()
