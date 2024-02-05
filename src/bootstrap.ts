@@ -17,6 +17,7 @@ export async function bootstrap(version: string): Promise<void> {
     config.clusterSecret,
     version,
   )
+  await cluster.init()
 
   const files = await cluster.getFileList()
   logger.info(`${files.files.length} files`)
@@ -43,19 +44,25 @@ export async function bootstrap(version: string): Promise<void> {
     }
   }
   const server = cluster.setupExpress(proto === 'https' && !config.enableNginx)
+  let checkFileInterval: NodeJS.Timeout
   try {
     await cluster.listen()
     await cluster.enable()
+
+    logger.info(colors.rainbow(`done, serving ${files.files.length} files`))
+    if (nodeCluster.isWorker && typeof process.send === 'function') {
+      process.send('ready')
+    }
+
+    checkFileInterval = setTimeout(checkFile, ms('10m'))
   } catch (e) {
     logger.fatal(e)
-    cluster.exit(1)
+    if (process.env.NODE_ENV === 'development') {
+      logger.fatal('development mode, not exiting')
+    } else {
+      cluster.exit(1)
+    }
   }
-  logger.info(colors.rainbow(`done, serving ${files.files.length} files`))
-  if (nodeCluster.isWorker && typeof process.send === 'function') {
-    process.send('ready')
-  }
-
-  let checkFileInterval = setTimeout(checkFile, ms('10m'))
   async function checkFile(): Promise<void> {
     logger.debug('refresh files')
     try {

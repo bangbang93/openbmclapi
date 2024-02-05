@@ -11,7 +11,7 @@ import got, {type Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
-import {clone, min, sum, template} from 'lodash-es'
+import {clone, sum, template} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
 import {userInfo} from 'node:os'
@@ -89,6 +89,10 @@ export class Cluster {
     return this._port
   }
 
+  public async init(): Promise<void> {
+    await this.storage.init?.()
+  }
+
   public async getFileList(): Promise<IFileList> {
     const FileListSchema = avsc.Type.forSchema({
       type: 'array',
@@ -112,9 +116,7 @@ export class Cluster {
   }
 
   public async syncFiles(fileList: IFileList): Promise<void> {
-    const missingFiles = await Bluebird.filter(fileList.files, async (file) => {
-      return !await this.storage.exists(hashToFilename(file.hash))
-    })
+    const missingFiles = await this.storage.getMissingFiles(fileList.files)
     if (missingFiles.length === 0) {
       return
     }
@@ -193,26 +195,10 @@ export class Cluster {
         if (!await this.storage.exists(hashPath)) {
           await this.downloadFile(hash)
         }
-        const name = req.query.name as string
-        if (name) {
-          res.attachment(name)
-        }
         res.set('x-bmclapi-hash', hash)
-        const path = this.storage.getAbsolutePath(hashPath)
-        return res.sendFile(path, {maxAge: '30d'}, (err) => {
-          let bytes = res.socket?.bytesWritten ?? 0
-          if (!err || err?.message === 'Request aborted' || err?.message === 'write EPIPE') {
-            const header = res.getHeader('content-length')
-            if (header) {
-              const contentLength = parseInt(header.toString(), 10)
-              bytes = min([bytes, contentLength]) ?? 0
-            }
-            this.counters.bytes += bytes
-            this.counters.hits++
-          } else {
-            if (err) return next(err)
-          }
-        })
+        const {bytes, hits} = await this.storage.express(hashPath, req, res, next)
+        this.counters.bytes += bytes
+        this.counters.hits += hits
       } catch (err) {
         if (err instanceof HTTPError) {
           if (err.response.statusCode === 404) {
@@ -337,14 +323,9 @@ export class Cluster {
   public async enable(): Promise<void> {
     if (this.isEnabled) return
     logger.trace('enable')
-    try {
-      await this._enable()
-      this.isEnabled = true
-      this.wantEnable = true
-    } catch (e) {
-      console.error(e)
-      this.exit(1)
-    }
+    await this._enable()
+    this.isEnabled = true
+    this.wantEnable = true
   }
 
   public async disable(): Promise<void> {

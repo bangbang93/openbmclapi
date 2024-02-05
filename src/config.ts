@@ -12,6 +12,8 @@ export class Config {
   public readonly disableAccessLog: boolean = false
 
   public readonly enableNginx: boolean = false
+  public readonly storage: string = 'file'
+  public readonly storageOpts: unknown
 
   private constructor() {
     if (!process.env.CLUSTER_ID) {
@@ -35,6 +37,12 @@ export class Config {
     }
     this.byoc = process.env.CLUSTER_BYOC === 'true'
     this.enableNginx = process.env.ENABLE_NGINX === 'true'
+    if (process.env.CLUSTER_STORAGE) {
+      this.storage = process.env.CLUSTER_STORAGE
+    }
+    if (process.env.CLUSTER_STORAGE_OPTIONS) {
+      this.storageOpts = JSON.parse(process.env.CLUSTER_STORAGE_OPTIONS)
+    }
   }
 
   public static getInstance(): Config {
