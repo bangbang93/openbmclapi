@@ -21,6 +21,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: bangbang93/openbmclapi
+          tags: bangbang93/openbmclapi:next
           cache-from: type=gha
           cache-to: type=gha,mode=max
