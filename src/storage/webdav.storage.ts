@@ -20,6 +20,8 @@ export class WebdavStorage implements IStorage {
   protected readonly storageConfig: z.infer<typeof storageConfigSchema>
   protected readonly basePath: string
 
+  protected existsHashes = new Set<string>()
+
   constructor(
     storageConfig: unknown,
   ) {
@@ -68,17 +70,26 @@ export class WebdavStorage implements IStorage {
     for (const file of files) {
       manifest.set(file.hash, file)
     }
+    if (this.existsHashes.size !== 0) {
+      for (const hash of this.existsHashes) {
+        manifest.delete(hash)
+      }
+      return [...manifest.values()]
+    }
     const queue = [this.basePath]
     do {
       const dir = queue.pop()
       if (!dir) break
       const entries = await this.client.getDirectoryContents(dir) as FileStat[]
+      entries.sort((a, b) => a.basename.localeCompare(b.basename))
+      logger.trace(`checking ${dir}`)
       for (const entry of entries) {
         if (entry.type === 'directory') {
           queue.push(entry.filename)
           continue
         }
         if (manifest.has(entry.basename)) {
+          this.existsHashes.add(entry.basename)
           manifest.delete(entry.basename)
         }
       }
@@ -104,6 +115,7 @@ export class WebdavStorage implements IStorage {
         if (!fileSet.has(entry.basename)) {
           logger.info(colors.gray(`delete expire file: ${entry.filename}`))
           await this.client.deleteFile(entry.filename)
+          this.existsHashes.delete(entry.basename)
         }
       }
     } while (queue.length !== 0)
