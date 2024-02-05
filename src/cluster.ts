@@ -6,7 +6,7 @@ import colors from 'colors/safe.js'
 import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
 import fse from 'fs-extra'
-import {mkdtemp, open, readdir, readFile, rm, stat, unlink} from 'fs/promises'
+import {mkdtemp, open, readFile, rm} from 'fs/promises'
 import got, {type Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
@@ -17,8 +17,7 @@ import ms from 'ms'
 import {userInfo} from 'node:os'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
-import {basename, dirname, join, sep} from 'path'
-import {cwd} from 'process'
+import {basename, dirname, join} from 'path'
 import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
@@ -27,6 +26,7 @@ import {config} from './config.js'
 import {validateFile} from './file.js'
 import {logger} from './logger.js'
 import MeasureRoute from './measure.route.js'
+import {getStorage, type IStorage} from './storage/base.storage.js'
 import {checkSign, hashToFilename} from './util.js'
 
 interface IFileList {
@@ -47,16 +47,17 @@ export class Cluster {
   public keepAliveInterval?: NodeJS.Timeout
   public interval?: NodeJS.Timeout
   public nginxProcess?: ChildProcess
+  public readonly storage: IStorage
 
   private keepAliveError = 0
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI ?? 'https://openbmclapi.bangbang93.com'
-  private readonly cacheDir = join(cwd(), 'cache')
   private readonly host?: string
   private _port: number | string
   private readonly publicPort: number
   private readonly ua: string
   private readonly got: Got
   private readonly requestCache = new Map()
+  private readonly tmpDir = join(tmpdir(), 'openbmclapi')
   private socket?: Socket
 
   private server?: Server
@@ -81,6 +82,7 @@ export class Cluster {
       responseType: 'buffer',
       timeout: ms('1m'),
     })
+    this.storage = getStorage(config)
   }
 
   public get port(): number | string {
@@ -111,8 +113,7 @@ export class Cluster {
 
   public async syncFiles(fileList: IFileList): Promise<void> {
     const missingFiles = await Bluebird.filter(fileList.files, async (file) => {
-      const path = join(this.cacheDir, hashToFilename(file.hash))
-      return !await fse.pathExists(path)
+      return !await this.storage.exists(hashToFilename(file.hash))
     })
     if (missingFiles.length === 0) {
       return
@@ -126,7 +127,6 @@ export class Cluster {
     const parallel = parseInt(process.env.SYNC_PARALLEL ?? '1', 10) || 1
     const noopen = process.env.FORCE_NOOPEN === 'true' && parallel === 1 ? '1' : ''
     await pMap(missingFiles, async (file, i) => {
-      const path = join(this.cacheDir, file.hash.substring(0, 2), file.hash)
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
       } else {
@@ -149,11 +149,11 @@ export class Cluster {
       if (!isFileCorrect) {
         throw new Error(`文件${file.path}校验失败`)
       }
-      await fse.outputFile(path, res.body)
+      await this.storage.writeFile(hashToFilename(file.hash), res.body)
     }, {
       concurrency: parallel,
     })
-    await this.gc(fileList)
+    await this.storage.gc(fileList.files)
   }
 
   public setupExpress(https: boolean): Server {
@@ -189,8 +189,8 @@ export class Cluster {
           return res.status(403).send('invalid sign')
         }
 
-        const path = join(this.cacheDir, hashToFilename(hash))
-        if (!await fse.pathExists(path)) {
+        const hashPath = hashToFilename(hash)
+        if (!await this.storage.exists(hashPath)) {
           await this.downloadFile(hash)
         }
         const name = req.query.name as string
@@ -198,6 +198,7 @@ export class Cluster {
           res.attachment(name)
         }
         res.set('x-bmclapi-hash', hash)
+        const path = this.storage.getAbsolutePath(hashPath)
         return res.sendFile(path, {maxAge: '30d'}, (err) => {
           let bytes = res.socket?.bytesWritten ?? 0
           if (!err || err?.message === 'Request aborted' || err?.message === 'write EPIPE') {
@@ -225,8 +226,8 @@ export class Cluster {
     let server: Server
     if (https) {
       server = createSecureServer({
-        key: readFileSync(join(this.cacheDir, 'key.pem'), 'utf8'),
-        cert: readFileSync(join(this.cacheDir, 'cert.pem'), 'utf8'),
+        key: readFileSync(join(this.tmpDir, 'key.pem'), 'utf8'),
+        cert: readFileSync(join(this.tmpDir, 'cert.pem'), 'utf8'),
         allowHTTP1: true,
       }, app) as unknown as Server
     } else {
@@ -365,8 +366,7 @@ export class Cluster {
       searchParams: {noopen: 1},
     })
 
-    const path = join(this.cacheDir, hashToFilename(hash))
-    await fse.outputFile(path, res.body)
+    await this.storage.writeFile(hashToFilename(hash), res.body)
   }
 
   public async keepAlive(): Promise<boolean> {
@@ -394,8 +394,8 @@ export class Cluster {
         resolve(cert)
       })
     })
-    await fse.outputFile(join(this.cacheDir, 'cert.pem'), cert.cert)
-    await fse.outputFile(join(this.cacheDir, 'key.pem'), cert.key)
+    await fse.outputFile(join(this.tmpDir, 'cert.pem'), cert.cert)
+    await fse.outputFile(join(this.tmpDir, 'key.pem'), cert.key)
   }
 
   public exit(code: number = 0): never {
@@ -412,6 +412,7 @@ export class Cluster {
         port: this.publicPort,
         version: this.version,
         byoc: config.byoc,
+        noFastEnable: process.env.NO_FAST_ENABLE === 'true',
       }, ([err, ack]: [unknown, unknown]) => {
         if (err) return reject(err)
         if (ack !== true) return reject(ack)
@@ -465,32 +466,5 @@ export class Cluster {
     } else {
       this.exit(1)
     }
-  }
-
-  private async gc(fileList: IFileList): Promise<void> {
-    const fileSet = new Set<string>()
-    for (const file of fileList.files) {
-      fileSet.add(hashToFilename(file.hash))
-    }
-    const queue = [this.cacheDir]
-    do {
-      const dir = queue.pop()
-      if (!dir) break
-      const entries = await readdir(dir)
-      for (const entry of entries) {
-        if (entry.endsWith('.pem')) continue
-        const p = join(dir, entry)
-        const s = await stat(p)
-        if (s.isDirectory()) {
-          queue.push(p)
-          continue
-        }
-        const cacheDirWithSep = this.cacheDir + sep
-        if (!fileSet.has(p.replace(cacheDirWithSep, ''))) {
-          console.log(colors.gray(`delete expire file: ${p}`))
-          await unlink(p)
-        }
-      }
-    } while (queue.length !== 0)
   }
 }

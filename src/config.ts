@@ -33,7 +33,7 @@ export class Config {
     if (typeof this.clusterPublicPort === 'number' && isNaN(this.clusterPublicPort)) {
       throw new Error('CLUSTER_PUBLIC_PORT is not a number')
     }
-    this.byoc = process.env.BYOC === 'true'
+    this.byoc = process.env.CLUSTER_BYOC === 'true'
     this.enableNginx = process.env.ENABLE_NGINX === 'true'
   }
 
