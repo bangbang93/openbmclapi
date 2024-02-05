@@ -71,4 +71,4 @@ CLUSTER_ID和CLUSTER_SECRET请联系我获取
 
 ### 同步数据
 openbmclapi会自行同步需要的文件，但是初次同步可能会速度过慢，如果您的节点是个全量节点，可以通过以下命令使用rsync快速同步
-`rsync -rzvP openbmclapi@home.933.moe::openbmclapi cache`
+`rsync -rzvP openbmclapi@home.933.moe::openbmclapi cache`或者`rsync -rzvP openbmclapi@storage.yserver.ink::openbmclapi cache`
