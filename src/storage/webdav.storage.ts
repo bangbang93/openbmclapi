@@ -20,7 +20,7 @@ export class WebdavStorage implements IStorage {
   protected readonly storageConfig: z.infer<typeof storageConfigSchema>
   protected readonly basePath: string
 
-  protected existsHashes = new Set<string>()
+  protected files = new Map<string, {size: number; path: string}>()
 
   constructor(
     storageConfig: unknown,
@@ -70,8 +70,8 @@ export class WebdavStorage implements IStorage {
     for (const file of files) {
       manifest.set(file.hash, file)
     }
-    if (this.existsHashes.size !== 0) {
-      for (const hash of this.existsHashes) {
+    if (this.files.size !== 0) {
+      for (const hash of this.files.keys()) {
         manifest.delete(hash)
       }
       return [...manifest.values()]
@@ -89,7 +89,7 @@ export class WebdavStorage implements IStorage {
           continue
         }
         if (manifest.has(entry.basename)) {
-          this.existsHashes.add(entry.basename)
+          this.files.set(entry.basename, {size: entry.size, path: entry.filename})
           manifest.delete(entry.basename)
         }
       }
@@ -115,7 +115,7 @@ export class WebdavStorage implements IStorage {
         if (!fileSet.has(entry.basename)) {
           logger.info(colors.gray(`delete expire file: ${entry.filename}`))
           await this.client.deleteFile(entry.filename)
-          this.existsHashes.delete(entry.basename)
+          this.files.delete(entry.basename)
         }
       }
     } while (queue.length !== 0)
