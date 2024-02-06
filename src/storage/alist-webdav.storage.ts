@@ -5,8 +5,8 @@ import {KeyvFile} from 'keyv-file'
 import ms from 'ms'
 import {join} from 'path'
 import {cwd} from 'process'
-import {WebdavStorage} from './webdav.storage.js'
 import rangeParser from 'range-parser'
+import {WebdavStorage} from './webdav.storage.js'
 
 export class AlistWebdavStorage extends WebdavStorage {
   protected readonly redirectUrlCache = new Keyv<string>({
@@ -19,7 +19,7 @@ export class AlistWebdavStorage extends WebdavStorage {
 
   public async express(hashPath: string, req: Request, res: Response): Promise<{ bytes: number; hits: number }> {
     const cachedUrl = await this.redirectUrlCache.get(hashPath)
-    const size = getSize(this.files.get(hashPath)?.size ?? 0, req.headers.range)
+    const size = getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
     if (cachedUrl) {
       res.status(302).location(cachedUrl).send()
       return {bytes: size, hits: 1}
@@ -52,7 +52,7 @@ function getSize(size: number, range?: string): number {
   if (!range) return size
   const ranges = rangeParser(size, range, {combine: true})
   if (typeof ranges === 'number') {
-    return ranges
+    return size
   }
   let total = 0
   for (const range of ranges) {
