@@ -22,6 +22,7 @@ import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
+import prettyBytes from 'pretty-bytes'
 import {config, type OpenbmclapiAgentConfiguration, OpenbmclapiAgentConfigurationSchema} from './config.js'
 import {validateFile} from './file.js'
 import {logger} from './logger.js'
@@ -385,6 +386,8 @@ export class Cluster {
         },
         ([err, date]: [unknown, string]) => {
           if (err) return reject(err)
+          const bytes = prettyBytes(counters.bytes, {binary: true})
+          logger.info(`keep alive success, serve ${counters.hits} files, ${bytes}`)
           this.counters.hits -= counters.hits
           this.counters.bytes -= counters.bytes
           resolve(!!date)
@@ -439,8 +442,6 @@ export class Cluster {
       if (!status) {
         logger.fatal('kicked by server')
         this.exit(1)
-      } else {
-        logger.trace('keep alive success')
       }
       this.keepAliveError = 0
     } catch (e) {
