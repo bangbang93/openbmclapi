@@ -44,6 +44,9 @@ export class Config {
     if (process.env.CLUSTER_STORAGE_OPTIONS) {
       this.storageOpts = JSON.parse(process.env.CLUSTER_STORAGE_OPTIONS)
     }
+    if (process.env.DISABLE_ACCESS_LOG) {
+      this.disableAccessLog = true
+    }
   }
 
   public static getInstance(): Config {
