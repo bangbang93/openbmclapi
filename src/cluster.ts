@@ -130,6 +130,12 @@ export class Cluster {
       return
     }
     logger.info(`mismatch ${missingFiles.length} files, start syncing`)
+    if (process.env.FORCE_NOOPEN) {
+      syncConfig = {
+        concurrency: 1,
+        source: 'center',
+      }
+    }
     logger.info(syncConfig, '同步策略')
     const totalSize = sum(missingFiles.map((file) => file.size))
     const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
