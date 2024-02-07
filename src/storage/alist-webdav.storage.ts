@@ -13,6 +13,7 @@ export class AlistWebdavStorage extends WebdavStorage {
     ttl: ms('1h'),
     store: new KeyvFile({
       filename: join(cwd(), 'cache', 'redirectUrl.json'),
+      writeDelay: ms('1m'),
     }),
   })
 
