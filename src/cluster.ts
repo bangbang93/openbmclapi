@@ -128,41 +128,47 @@ export class Cluster {
     if (missingFiles.length === 0) {
       return
     }
-    console.log(`mismatch ${missingFiles.length} files, start syncing`)
+    logger.info(`mismatch ${missingFiles.length} files, start syncing`)
+    logger.info(syncConfig, '同步策略')
     const totalSize = sum(missingFiles.map((file) => file.size))
     const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
       total: totalSize,
       width: 80,
     })
     const parallel = syncConfig.concurrency
-    const noopen = syncConfig.source  === 'center' ? 1 : 0
-    await pMap(missingFiles, async (file, i) => {
-      if (process.stderr.isTTY) {
-        bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
-      } else {
-        console.log(`[${i + 1}/${missingFiles.length}] ${colors.green('downloading')} ${colors.underline(file.path)}`)
-      }
-      let lastProgress = 0
-      const res = await this.got.get<Buffer>(file.path.substring(1), {
-        searchParams: {
-          noopen,
-        },
-        retry: {
-          limit: 10,
-        },
-      })
-        .on('downloadProgress', (progress) => {
-          bar.tick(progress.transferred - lastProgress)
-          lastProgress = progress.transferred
-        })
-      const isFileCorrect = validateFile(res.body, file.hash)
-      if (!isFileCorrect) {
-        throw new Error(`文件${file.path}校验失败`)
-      }
-      await this.storage.writeFile(hashToFilename(file.hash), res.body)
-    }, {
-      concurrency: parallel,
-    })
+    const noopen = syncConfig.source === 'center' ? 1 : 0
+    await pMap(
+      missingFiles,
+      async (file, i) => {
+        if (process.stderr.isTTY) {
+          bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
+        } else {
+          logger.info(`[${i + 1}/${missingFiles.length}] ${colors.green('downloading')} ${colors.underline(file.path)}`)
+        }
+        let lastProgress = 0
+        const res = await this.got
+          .get<Buffer>(file.path.substring(1), {
+            searchParams: {
+              noopen,
+            },
+            retry: {
+              limit: 10,
+            },
+          })
+          .on('downloadProgress', (progress) => {
+            bar.tick(progress.transferred - lastProgress)
+            lastProgress = progress.transferred
+          })
+        const isFileCorrect = validateFile(res.body, file.hash)
+        if (!isFileCorrect) {
+          throw new Error(`文件${file.path}校验失败`)
+        }
+        await this.storage.writeFile(hashToFilename(file.hash), res.body)
+      },
+      {
+        concurrency: parallel,
+      },
+    )
     await this.storage.gc(fileList.files)
   }
 
@@ -200,7 +206,7 @@ export class Cluster {
         }
 
         const hashPath = hashToFilename(hash)
-        if (!await this.storage.exists(hashPath)) {
+        if (!(await this.storage.exists(hashPath))) {
           await this.downloadFile(hash)
         }
         res.set('x-bmclapi-hash', hash)
@@ -219,11 +225,14 @@ export class Cluster {
     app.use('/measure', MeasureRoute)
     let server: Server
     if (https) {
-      server = createSecureServer({
-        key: readFileSync(join(this.tmpDir, 'key.pem'), 'utf8'),
-        cert: readFileSync(join(this.tmpDir, 'cert.pem'), 'utf8'),
-        allowHTTP1: true,
-      }, app) as unknown as Server
+      server = createSecureServer(
+        {
+          key: readFileSync(join(this.tmpDir, 'key.pem'), 'utf8'),
+          cert: readFileSync(join(this.tmpDir, 'cert.pem'), 'utf8'),
+          allowHTTP1: true,
+        },
+        app,
+      ) as unknown as Server
     } else {
       server = createServer(app)
     }
@@ -242,13 +251,16 @@ export class Cluster {
     console.log('nginx conf', confFile)
 
     await fse.copy(join(__dirname, '..', 'nginx'), dirname(confFile), {recursive: true, overwrite: true})
-    await fse.outputFile(confFile, template(confTemplate)({
-      root: pwd,
-      port: appPort,
-      ssl: proto === 'https',
-      sock: this._port,
-      user: userInfo().username,
-    }))
+    await fse.outputFile(
+      confFile,
+      template(confTemplate)({
+        root: pwd,
+        port: appPort,
+        ssl: proto === 'https',
+        sock: this._port,
+        user: userInfo().username,
+      }),
+    )
 
     const logFile = join(__dirname, '..', 'access.log')
     const logFd = await open(logFile, 'a')
@@ -266,7 +278,8 @@ export class Cluster {
       })
     }
     // eslint-disable-next-line max-len
-    const logRegexp = /^(?<client>\S+) \S+ (?<userid>\S+) \[(?<datetime>[^\]]+)] "(?<method>[A-Z]+) (?<request>[^ "]+)? HTTP\/[0-9.]+" (?<status>[0-9]{3}) (?<size>[0-9]+|-) "(?<referrer>[^"]*)" "(?<useragent>[^"]*)"/
+    const logRegexp =
+      /^(?<client>\S+) \S+ (?<userid>\S+) \[(?<datetime>[^\]]+)] "(?<method>[A-Z]+) (?<request>[^ "]+)? HTTP\/[0-9.]+" (?<status>[0-9]{3}) (?<size>[0-9]+|-) "(?<referrer>[^"]*)" "(?<useragent>[^"]*)"/
     tail.on('line', (line: string) => {
       const match = line.match(logRegexp)
       if (!match) {
@@ -296,7 +309,8 @@ export class Cluster {
     this.socket = connect(this.prefixUrl, {
       transports: ['websocket'],
       query: {
-        clusterId: this.clusterId, clusterSecret: this.clusterSecret,
+        clusterId: this.clusterId,
+        clusterSecret: this.clusterSecret,
       },
     })
     this.socket.on('error', this.onConnectionError.bind(this, 'error'))
@@ -324,8 +338,7 @@ export class Cluster {
     io.on('reconnect_error', (err) => {
       logger.error(err, 'reconnect_error')
     })
-    io.on('reconnect_failed', this.onConnectionError.bind(this, 'reconnect_failed', new Error('reconnect'
-      + ' failed')))
+    io.on('reconnect_failed', this.onConnectionError.bind(this, 'reconnect_failed', new Error('reconnect failed')))
   }
 
   public async enable(): Promise<void> {
@@ -364,15 +377,19 @@ export class Cluster {
     }
     return new Promise((resolve, reject) => {
       const counters = clone(this.counters)
-      this.socket?.emit('keep-alive', {
-        time: new Date(),
-        ...counters,
-      }, ([err, date]: [unknown, string]) => {
-        if (err) return reject(err)
-        this.counters.hits -= counters.hits
-        this.counters.bytes -= counters.bytes
-        resolve(!!date)
-      })
+      this.socket?.emit(
+        'keep-alive',
+        {
+          time: new Date(),
+          ...counters,
+        },
+        ([err, date]: [unknown, string]) => {
+          if (err) return reject(err)
+          this.counters.hits -= counters.hits
+          this.counters.bytes -= counters.bytes
+          resolve(!!date)
+        },
+      )
     })
   }
 
@@ -396,19 +413,23 @@ export class Cluster {
 
   private async _enable(): Promise<void> {
     return new Bluebird<void>((resolve, reject) => {
-      this.socket?.emit('enable', {
-        host: this.host,
-        port: this.publicPort,
-        version: this.version,
-        byoc: config.byoc,
-        noFastEnable: process.env.NO_FAST_ENABLE === 'true',
-      }, ([err, ack]: [unknown, unknown]) => {
-        if (err) return reject(err)
-        if (ack !== true) return reject(ack)
-        resolve()
-        logger.info(colors.rainbow('start doing my job'))
-        this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
-      })
+      this.socket?.emit(
+        'enable',
+        {
+          host: this.host,
+          port: this.publicPort,
+          version: this.version,
+          byoc: config.byoc,
+          noFastEnable: process.env.NO_FAST_ENABLE === 'true',
+        },
+        ([err, ack]: [unknown, unknown]) => {
+          if (err) return reject(err)
+          if (ack !== true) return reject(ack)
+          resolve()
+          logger.info(colors.rainbow('start doing my job'))
+          this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
+        },
+      )
     }).timeout(ms('5m'), '节点注册超时')
   }
 
