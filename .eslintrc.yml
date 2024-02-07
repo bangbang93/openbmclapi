@@ -3,5 +3,6 @@ env:
   node: true
 extends:
   - '@bangbang93/recommended'
+  - prettier
 rules:
   no-console: off
