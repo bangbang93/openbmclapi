@@ -2,6 +2,7 @@ import colors from 'colors/safe.js'
 import type {Request, Response} from 'express'
 import {Agent} from 'node:https'
 import {join} from 'path'
+import rangeParser from 'range-parser'
 import {createClient, type FileStat, type WebDAVClient} from 'webdav'
 import {z} from 'zod'
 import {fromZodError} from 'zod-validation-error'
@@ -125,6 +126,20 @@ export class WebdavStorage implements IStorage {
     const path = join(this.basePath, hashPath)
     const file = this.client.getFileDownloadLink(path)
     res.redirect(file)
-    return {bytes: 0, hits: 1}
+    const size = this.getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
+    return {bytes: size, hits: 1}
+  }
+
+  protected getSize(size: number, range?: string): number {
+    if (!range) return size
+    const ranges = rangeParser(size, range, {combine: true})
+    if (typeof ranges === 'number') {
+      return size
+    }
+    let total = 0
+    for (const range of ranges) {
+      total += range.end - range.start + 1
+    }
+    return total
   }
 }
