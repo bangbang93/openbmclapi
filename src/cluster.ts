@@ -22,7 +22,7 @@ import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
-import {config} from './config.js'
+import {config, type OpenbmclapiAgentConfiguration, OpenbmclapiAgentConfigurationSchema} from './config.js'
 import {validateFile} from './file.js'
 import {logger} from './logger.js'
 import MeasureRoute from './measure.route.js'
@@ -115,7 +115,15 @@ export class Cluster {
     }
   }
 
-  public async syncFiles(fileList: IFileList): Promise<void> {
+  public async getConfiguration(): Promise<OpenbmclapiAgentConfiguration> {
+    const res = await this.got.get('openbmclapi/configuration', {
+      responseType: 'json',
+      cache: this.requestCache,
+    })
+    return OpenbmclapiAgentConfigurationSchema.parse(res.body)
+  }
+
+  public async syncFiles(fileList: IFileList, syncConfig: OpenbmclapiAgentConfiguration['sync']): Promise<void> {
     const missingFiles = await this.storage.getMissingFiles(fileList.files)
     if (missingFiles.length === 0) {
       return
@@ -126,8 +134,8 @@ export class Cluster {
       total: totalSize,
       width: 80,
     })
-    const parallel = parseInt(process.env.SYNC_PARALLEL ?? '1', 10) || 1
-    const noopen = process.env.FORCE_NOOPEN === 'true' && parallel === 1 ? '1' : ''
+    const parallel = syncConfig.concurrency
+    const noopen = syncConfig.source  === 'center' ? 1 : 0
     await pMap(missingFiles, async (file, i) => {
       if (process.stderr.isTTY) {
         bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)

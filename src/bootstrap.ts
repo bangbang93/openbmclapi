@@ -19,10 +19,11 @@ export async function bootstrap(version: string): Promise<void> {
   )
   await cluster.init()
 
+  const configuration = await cluster.getConfiguration()
   const files = await cluster.getFileList()
   logger.info(`${files.files.length} files`)
   try {
-    await cluster.syncFiles(files)
+    await cluster.syncFiles(files, configuration.sync)
   } catch (e) {
     if (e instanceof HTTPError) {
       logger.error({url: e.response.url}, 'download error')
@@ -67,7 +68,8 @@ export async function bootstrap(version: string): Promise<void> {
     logger.debug('refresh files')
     try {
       const files = await cluster.getFileList()
-      await cluster.syncFiles(files)
+      const configuration = await cluster.getConfiguration()
+      await cluster.syncFiles(files, configuration.sync)
     } finally {
       checkFileInterval = setTimeout(() => {
         checkFile()
