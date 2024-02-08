@@ -266,6 +266,7 @@ export class Cluster {
         ssl: proto === 'https',
         sock: this._port,
         user: userInfo().username,
+        tmpdir: this.tmpDir,
       }),
     )
 
