@@ -28,7 +28,7 @@ jobs:
               artifact_name: "openbmclapi-windows.tar.xz"
             - os: macos-latest
               artifact_name: "openbmclapi-macos.tar.xz"
-    runs-on: "ubuntu-latest"
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
