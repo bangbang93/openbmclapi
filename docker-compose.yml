@@ -6,6 +6,7 @@ services:
       CLUSTER_ID: ${CLUSTER_ID}
       CLUSTER_SECRET: ${CLUSTER_SECRET}
       CLUSTER_PUBLIC_PORT: 4000
+      TZ: Asia/Shanghai
 #      CLUSTER_IP: ''
     volumes:
     - ./cache:/opt/openbmclapi/cache
