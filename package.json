@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "test": "true",
-    "build": "rimraf && tsc",
+    "build": "rimraf dist && tsc",
     "build:esbuild": "esbuild --bundle --platform=node --sourcemap --outfile=dist/openbmclapi.js src/index.ts",
     "dev": "tsc-watch --onSuccess \"node --enable-source-maps dist/index.js\"",
     "pkg": "pkg . -C Gzip",
