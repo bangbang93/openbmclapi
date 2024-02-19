@@ -20,14 +20,15 @@ jobs:
     needs: "create-release"
     name: "Build and Tar Ball"
     strategy:
-        matrix:
-          include:
-            - os: ubuntu-latest
-              artifact_name: "openbmclapi-linux.tar.xz"
-            - os: windows-latest
-              artifact_name: "openbmclapi-windows.tar.xz"
-            - os: macos-latest
-              artifact_name: "openbmclapi-macos.tar.xz"
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: "openbmclapi-linux.tar.xz"
+          - os: windows-latest
+            artifact_name: "openbmclapi-windows.tar.xz"
+          - os: macos-latest
+            artifact_name: "openbmclapi-macos.tar.xz"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
