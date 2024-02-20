@@ -7,6 +7,7 @@ import {createClient, type FileStat, type WebDAVClient} from 'webdav'
 import {z} from 'zod'
 import {fromZodError} from 'zod-validation-error'
 import {logger} from '../logger.js'
+import type {IFileInfo} from '../types'
 import type {IStorage} from './base.storage.js'
 
 const storageConfigSchema = z.object({
@@ -23,9 +24,7 @@ export class WebdavStorage implements IStorage {
 
   protected files = new Map<string, {size: number; path: string}>()
 
-  constructor(
-    storageConfig: unknown,
-  ) {
+  constructor(storageConfig: unknown) {
     try {
       this.storageConfig = storageConfigSchema.parse(storageConfig)
     } catch (e) {
@@ -35,26 +34,24 @@ export class WebdavStorage implements IStorage {
         throw new Error('webdav存储选项无效', {cause: e})
       }
     }
-    this.client = createClient(
-      this.storageConfig.url,
-      {
-        username: this.storageConfig.username,
-        password: this.storageConfig.password,
-        httpsAgent: new Agent({rejectUnauthorized: false}),
-      },
-    )
+    this.client = createClient(this.storageConfig.url, {
+      username: this.storageConfig.username,
+      password: this.storageConfig.password,
+      httpsAgent: new Agent({rejectUnauthorized: false}),
+    })
     this.basePath = this.storageConfig.basePath
   }
 
   public async init(): Promise<void> {
-    if (!await this.client.exists(this.basePath)) {
+    if (!(await this.client.exists(this.basePath))) {
       logger.info(`create base path: ${this.basePath}`)
       await this.client.createDirectory(this.basePath, {recursive: true})
     }
   }
 
-  public async writeFile(path: string, content: Buffer): Promise<void> {
+  public async writeFile(path: string, content: Buffer, fileInfo: IFileInfo): Promise<void> {
     await this.client.putFileContents(join(this.basePath, path), content)
+    this.files.set(fileInfo.hash, {size: content.length, path: fileInfo.path})
   }
 
   public async exists(path: string): Promise<boolean> {
@@ -64,7 +61,6 @@ export class WebdavStorage implements IStorage {
   public getAbsolutePath(path: string): string {
     return this.client.getFileDownloadLink(join(this.basePath, path))
   }
-
 
   public async getMissingFiles<T extends {path: string; hash: string}>(files: T[]): Promise<T[]> {
     const manifest = new Map<string, T>()
@@ -81,7 +77,7 @@ export class WebdavStorage implements IStorage {
     do {
       const dir = queue.pop()
       if (!dir) break
-      const entries = await this.client.getDirectoryContents(dir) as FileStat[]
+      const entries = (await this.client.getDirectoryContents(dir)) as FileStat[]
       entries.sort((a, b) => a.basename.localeCompare(b.basename))
       logger.trace(`checking ${dir}`)
       for (const entry of entries) {
@@ -107,7 +103,7 @@ export class WebdavStorage implements IStorage {
     do {
       const dir = queue.pop()
       if (!dir) break
-      const entries = await this.client.getDirectoryContents(dir) as FileStat[]
+      const entries = (await this.client.getDirectoryContents(dir)) as FileStat[]
       for (const entry of entries) {
         if (entry.type === 'directory') {
           queue.push(entry.filename)
@@ -122,7 +118,7 @@ export class WebdavStorage implements IStorage {
     } while (queue.length !== 0)
   }
 
-  public async express(hashPath: string, req: Request, res: Response): Promise<{ bytes: number; hits: number }> {
+  public async express(hashPath: string, req: Request, res: Response): Promise<{bytes: number; hits: number}> {
     const path = join(this.basePath, hashPath)
     const file = this.client.getFileDownloadLink(path)
     res.redirect(file)

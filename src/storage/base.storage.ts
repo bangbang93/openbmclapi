@@ -3,13 +3,14 @@ import {join} from 'path'
 import {cwd} from 'process'
 import type {Config} from '../config.js'
 import {logger} from '../logger.js'
+import type {IFileInfo} from '../types'
 import {AlistWebdavStorage} from './alist-webdav.storage.js'
 import {FileStorage} from './file.storage.js'
 import {WebdavStorage} from './webdav.storage.js'
 
 export interface IStorage {
   init?(): Promise<void>
-  writeFile(path: string, content: Buffer): Promise<void>
+  writeFile(path: string, content: Buffer, fileInfo: IFileInfo): Promise<void>
 
   exists(path: string): Promise<boolean>
 
@@ -19,7 +20,7 @@ export interface IStorage {
 
   gc(files: {path: string; hash: string; size: number}[]): Promise<void>
 
-  express(hashPath: string, req: Request, res: Response, next?: NextFunction): Promise<{ bytes: number; hits: number }>
+  express(hashPath: string, req: Request, res: Response, next?: NextFunction): Promise<{bytes: number; hits: number}>
 }
 
 export function getStorage(config: Config): IStorage {

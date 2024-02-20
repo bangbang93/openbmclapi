@@ -28,11 +28,8 @@ import {validateFile} from './file.js'
 import {logger} from './logger.js'
 import MeasureRoute from './measure.route.js'
 import {getStorage, type IStorage} from './storage/base.storage.js'
+import type {IFileList} from './types'
 import {checkSign, hashToFilename} from './util.js'
-
-interface IFileList {
-  files: {path: string; hash: string; size: number}[]
-}
 
 interface ICounters {
   hits: number
@@ -174,7 +171,7 @@ export class Cluster {
             logger.error(`文件${file.path}校验失败`)
             return
           }
-          await this.storage.writeFile(hashToFilename(file.hash), res.body)
+          await this.storage.writeFile(hashToFilename(file.hash), res.body, file)
         } catch (e) {
           hasError = true
           logger.error(e)
@@ -389,7 +386,11 @@ export class Cluster {
       searchParams: {noopen: 1},
     })
 
-    await this.storage.writeFile(hashToFilename(hash), res.body)
+    await this.storage.writeFile(hashToFilename(hash), res.body, {
+      path: `/download/${hash}`,
+      hash,
+      size: res.body.length,
+    })
   }
 
   public async keepAlive(): Promise<boolean> {
