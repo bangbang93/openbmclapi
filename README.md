@@ -26,6 +26,7 @@ docker pull registry.bangbang93.com/bmclapi/openbmclapi
 ```
 
 ### Docker Compose
+请先根据 [设置参数](#设置参数) 中说明的内容创建 `.env` 文件或直接更改 `docker-compose.yml` 文件, 然后运行以下命令:
 
 ```bash
 docker compose up -d
