@@ -81,7 +81,7 @@ export class Cluster {
         'user-agent': this.ua,
       },
       responseType: 'buffer',
-      timeout: ms('1m'),
+      timeout: ms('5m'),
     })
     this.storage = getStorage(config)
   }
