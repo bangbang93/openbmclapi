@@ -1,3 +1,9 @@
+[Wiki](https://github.com/bangbang93/openbmclapi/wiki)
+
+- 如果你是家庭宽带打算参与，配置信息可以参考 [家宽搭建说明](https://github.com/bangbang93/openbmclapi/wiki/%E5%AE%B6%E5%AE%BD%E6%90%AD%E5%BB%BA%E8%AF%B4%E6%98%8E)
+
+- 如果你是国内服务器打算参与，配置信息可以参考 [国内服务器搭建说明](https://github.com/bangbang93/openbmclapi/wiki/%E5%9B%BD%E5%86%85%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%90%AD%E5%BB%BA%E8%AF%B4%E6%98%8E)
+
 安装
 ---
 
