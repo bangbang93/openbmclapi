@@ -144,6 +144,7 @@ export class Cluster {
     })
     const parallel = syncConfig.concurrency
     const noopen = syncConfig.source === 'center' ? 1 : 0
+    let hasError = false
     await pMap(
       missingFiles,
       async (file, i) => {
@@ -153,30 +154,42 @@ export class Cluster {
           logger.info(`[${i + 1}/${missingFiles.length}] ${colors.green('downloading')} ${colors.underline(file.path)}`)
         }
         let lastProgress = 0
-        const res = await this.got
-          .get<Buffer>(file.path.substring(1), {
-            searchParams: {
-              noopen,
-            },
-            retry: {
-              limit: 10,
-            },
-          })
-          .on('downloadProgress', (progress) => {
-            bar.tick(progress.transferred - lastProgress)
-            lastProgress = progress.transferred
-          })
-        const isFileCorrect = validateFile(res.body, file.hash)
-        if (!isFileCorrect) {
-          throw new Error(`文件${file.path}校验失败`)
+        try {
+          const res = await this.got
+            .get<Buffer>(file.path.substring(1), {
+              searchParams: {
+                noopen,
+              },
+              retry: {
+                limit: 10,
+              },
+            })
+            .on('downloadProgress', (progress) => {
+              bar.tick(progress.transferred - lastProgress)
+              lastProgress = progress.transferred
+            })
+          const isFileCorrect = validateFile(res.body, file.hash)
+          if (!isFileCorrect) {
+            hasError = true
+            logger.error(`文件${file.path}校验失败`)
+            return
+          }
+          await this.storage.writeFile(hashToFilename(file.hash), res.body)
+        } catch (e) {
+          hasError = true
+          logger.error(e)
         }
-        await this.storage.writeFile(hashToFilename(file.hash), res.body)
       },
       {
         concurrency: parallel,
       },
     )
     await this.storage.gc(fileList.files)
+    if (hasError) {
+      throw new Error('同步失败')
+    } else {
+      logger.info('同步完成')
+    }
   }
 
   public setupExpress(https: boolean): Server {
