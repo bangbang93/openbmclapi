@@ -11,7 +11,7 @@ services:
     volumes:
     - ./cache:/opt/openbmclapi/cache
     ports:
-    - 4000:4000
+    - "4000:4000"
     restart: always
     logging:
       driver: 'json-file'
