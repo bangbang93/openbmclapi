@@ -7,16 +7,15 @@ import {fileURLToPath} from 'url'
 import {Cluster} from './cluster.js'
 import {config} from './config.js'
 import {logger} from './logger.js'
+import {TokenManager} from './token.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export async function bootstrap(version: string): Promise<void> {
-  logger.info(`booting openbmclapi ${version}`)
-  const cluster = new Cluster(
-    config.clusterId,
-    config.clusterSecret,
-    version,
-  )
+  logger.info(colors.green(`booting openbmclapi ${version}`))
+  const tokenManager = new TokenManager(config.clusterId, config.clusterSecret, version)
+  await tokenManager.getToken()
+  const cluster = new Cluster(config.clusterSecret, version, tokenManager)
   await cluster.init()
 
   const configuration = await cluster.getConfiguration()
@@ -72,11 +71,10 @@ export async function bootstrap(version: string): Promise<void> {
       await cluster.syncFiles(files, configuration.sync)
     } finally {
       checkFileInterval = setTimeout(() => {
-        checkFile()
-          .catch((e) => {
-            console.error('check file error')
-            console.error(e)
-          })
+        checkFile().catch((e) => {
+          console.error('check file error')
+          console.error(e)
+        })
       }, ms('10m'))
     }
   }

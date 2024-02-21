@@ -26,7 +26,7 @@ jobs:
           - os: ubuntu-latest
             artifact_name: "openbmclapi-linux.tar.xz"
           - os: windows-latest
-            artifact_name: "openbmclapi-windows.tar.xz"
+            artifact_name: "openbmclapi-windows.tar.gz"
           - os: macos-latest
             artifact_name: "openbmclapi-macos.tar.xz"
     runs-on: ${{ matrix.os }}
@@ -38,7 +38,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
-      - run: tar -cJf ${{ matrix.artifact_name }} dist nginx package.json node_modules
+      - run: tar -caf ${{ matrix.artifact_name }} dist nginx package.json node_modules
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
