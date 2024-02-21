@@ -18,16 +18,17 @@ import {userInfo} from 'node:os'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
 import {basename, dirname, join} from 'path'
+import prettyBytes from 'pretty-bytes'
 import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
-import prettyBytes from 'pretty-bytes'
 import {config, type OpenbmclapiAgentConfiguration, OpenbmclapiAgentConfigurationSchema} from './config.js'
 import {validateFile} from './file.js'
 import {logger} from './logger.js'
 import MeasureRoute from './measure.route.js'
 import {getStorage, type IStorage} from './storage/base.storage.js'
+import type {TokenManager} from './token.js'
 import type {IFileList} from './types'
 import {checkSign, hashToFilename} from './util.js'
 
@@ -61,24 +62,28 @@ export class Cluster {
   private server?: Server
 
   public constructor(
-    private readonly clusterId: string,
     private readonly clusterSecret: string,
     private readonly version: string,
+    private readonly tokenManager: TokenManager,
   ) {
-    if (!clusterId || !clusterSecret) throw new Error('missing config')
     this.host = config.clusterIp
     this._port = config.port
     this.publicPort = config.clusterPublicPort ?? config.port
     this.ua = `openbmclapi-cluster/${version}`
     this.got = got.extend({
       prefixUrl: this.prefixUrl,
-      username: this.clusterId,
-      password: this.clusterSecret,
       headers: {
         'user-agent': this.ua,
       },
       responseType: 'buffer',
       timeout: ms('5m'),
+      hooks: {
+        beforeRequest: [
+          async (options) => {
+            options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
+          },
+        ],
+      },
     })
     this.storage = getStorage(config)
   }
@@ -322,13 +327,12 @@ export class Cluster {
     })
   }
 
-  public connect(): void {
+  public async connect(): Promise<void> {
     if (this.socket) return
     this.socket = connect(this.prefixUrl, {
       transports: ['websocket'],
-      query: {
-        clusterId: this.clusterId,
-        clusterSecret: this.clusterSecret,
+      auth: {
+        token: await this.tokenManager.getToken(),
       },
     })
     this.socket.on('error', this.onConnectionError.bind(this, 'error'))
