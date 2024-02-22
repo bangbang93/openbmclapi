@@ -145,7 +145,7 @@ export class Cluster {
       width: 80,
     })
     const parallel = syncConfig.concurrency
-    const noopen = syncConfig.source === 'center' ? 1 : 0
+    const noopen = syncConfig.source === 'center' ? '1' : ''
     let hasError = false
     await pMap(
       missingFiles,
