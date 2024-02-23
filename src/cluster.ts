@@ -179,7 +179,11 @@ export class Cluster {
           await this.storage.writeFile(hashToFilename(file.hash), res.body, file)
         } catch (e) {
           hasError = true
-          logger.error(e)
+          if (e instanceof HTTPError) {
+            logger.error({err: e}, `下载文件${file.path}失败: ${e.response.statusCode}, url: ${e.response.url}`)
+          } else {
+            logger.error({err: e}, `下载文件${file.path}失败`)
+          }
         }
       },
       {
