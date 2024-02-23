@@ -26,7 +26,7 @@ import {fileURLToPath} from 'url'
 import {config, type OpenbmclapiAgentConfiguration, OpenbmclapiAgentConfigurationSchema} from './config.js'
 import {validateFile} from './file.js'
 import {logger} from './logger.js'
-import MeasureRoute from './measure.route.js'
+import MeasureRouteFactory from './measure.route.js'
 import {getStorage, type IStorage} from './storage/base.storage.js'
 import type {TokenManager} from './token.js'
 import type {IFileList} from './types'
@@ -248,7 +248,7 @@ export class Cluster {
         return next(err)
       }
     })
-    app.use('/measure', MeasureRoute)
+    app.use('/measure', MeasureRouteFactory(config))
     let server: Server
     if (https) {
       server = createSecureServer(
