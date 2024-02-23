@@ -181,6 +181,7 @@ export class Cluster {
           hasError = true
           if (e instanceof HTTPError) {
             logger.error({err: e}, `下载文件${file.path}失败: ${e.response.statusCode}, url: ${e.response.url}`)
+            logger.trace({err: e}, e.response.body?.toString())
           } else {
             logger.error({err: e}, `下载文件${file.path}失败`)
           }
