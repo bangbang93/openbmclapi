@@ -10,7 +10,7 @@
 ### Docker Cli
 
 ```bash
-docker run -e CLUSTER_ID=xxx -e CLUSTER_SECRET=yyy -e TZ=Asia/Shanghai -v /opt/openbmclapi/cache -p 4000:4000 bangbang93/openbmclapi
+docker run -e CLUSTER_ID=xxx -e CLUSTER_SECRET=yyy -e TZ=Asia/Shanghai -v openbmclapi-cache:/opt/openbmclapi/cache -p 4000:4000 bangbang93/openbmclapi
 ```
 
 ```bash
