@@ -37,8 +37,19 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      ## linux & macos
       - run: npm run build
-      - run: tar -caf ${{ matrix.artifact_name }} dist nginx package.json node_modules
+      - run: cp $(which node) .
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      ## windows
+      - run: tar -caf ${{ matrix.artifact_name }} dist nginx package.json node_modules node
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      - run: | 
+          set SRC=(where node)
+          copy /b %SRC% .
+          tar -caf ${{ matrix.artifact_name }} dist package.json node_modules node.exe
+        if: matrix.os == 'windows-latest'
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
