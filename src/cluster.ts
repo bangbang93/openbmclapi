@@ -80,7 +80,9 @@ export class Cluster {
       hooks: {
         beforeRequest: [
           async (options) => {
-            options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
+            if (options.url.hostname.includes('bmclapi.bangbang93.com')) {
+              options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
+            }
           },
         ],
       },
@@ -181,7 +183,10 @@ export class Cluster {
           hasError = true
           if (e instanceof HTTPError) {
             logger.error({err: e}, `下载文件${file.path}失败: ${e.response.statusCode}, url: ${e.response.url}`)
-            logger.trace({err: e, redirectUrls: e.response.redirectUrls}, e.response.body?.toString())
+            logger.trace(
+              {err: e, options: e.options, redirectUrls: e.response.redirectUrls},
+              e.response.body?.toString(),
+            )
           } else {
             logger.error({err: e}, `下载文件${file.path}失败`)
           }
