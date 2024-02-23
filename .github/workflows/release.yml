@@ -46,7 +46,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       - run: | 
           set SRC=(where node)
-          copy /b %SRC% .
+          copy /b $SRC .
           tar -caf ${{ matrix.artifact_name }} dist package.json node_modules node.exe
         if: matrix.os == 'windows-latest'
 
