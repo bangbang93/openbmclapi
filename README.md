@@ -1,3 +1,17 @@
+# BMCLAPI
+BMCLAPI是@bangbang93开发的BMCL的一部分，用于解决国内线路对Forge和Minecraft官方使用的Amazon S3 速度缓慢的问题。BMCLAPI是对外开放的，所有需要Minecraft资源的启动器均可调用。
+
+
+# OpenBMCLAPI
+这个项目的主要目的是辅助bmclapi分发文件
+对节点的要求降低了不少
+
+1. 公网可访问（端口映射也可），可以非80
+2. 10Mbps以上的上行速度
+3. 暂时不接受国外节点了
+4. 可以长时间稳定在线
+5. 暂不支持IPv6 only(可以双栈)
+
 [Wiki](https://github.com/bangbang93/openbmclapi/wiki)
 
 - 如果你是家庭宽带打算参与，配置信息可以参考 [家宽搭建说明](https://github.com/bangbang93/openbmclapi/wiki/%E5%AE%B6%E5%AE%BD%E6%90%AD%E5%BB%BA%E8%AF%B4%E6%98%8E)
@@ -10,10 +24,6 @@
 ### Docker Cli
 
 ```bash
-docker run -e CLUSTER_ID=xxx -e CLUSTER_SECRET=yyy -e TZ=Asia/Shanghai -v openbmclapi-cache:/opt/openbmclapi/cache -p 4000:4000 bangbang93/openbmclapi
-```
-
-```bash
 docker run -d \
 -e CLUSTER_ID=${CLUSTER_ID} \
 -e CLUSTER_SECRET=${CLUSTER_SECRET} \
@@ -22,6 +32,7 @@ docker run -d \
 -v /data/openbmclapi:/opt/openbmclapi/cache \
 -p ${CLUSTER_PORT}:4000 \
 --restart always \
+--name openbmclapi \
 bangbang93/openbmclapi
 ```
 
