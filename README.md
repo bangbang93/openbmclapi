@@ -72,7 +72,7 @@ docker compose up -d
 
 #### 环境
 
-- Node.js 8以上
+- Node.js 18以上
 - Windows/MacOS/Linux, x86/arm均可 (凡是nodejs支持的环境都可以)
 
 #### 设置环境
