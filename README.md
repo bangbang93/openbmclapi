@@ -23,6 +23,8 @@ BMCLAPI是@bangbang93开发的BMCL的一部分，用于解决国内线路对Forg
 
 ### Docker Cli
 
+如果你不熟悉docker，可以参考[Docker部署指北](https://github.com/bangbang93/openbmclapi/wiki/docker%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8C%97)
+
 ```bash
 docker run -d \
 -e CLUSTER_ID=${CLUSTER_ID} \
