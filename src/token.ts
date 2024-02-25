@@ -19,7 +19,9 @@ export class TokenManager {
       headers: {
         'user-agent': `openbmclapi-cluster/${version}`,
       },
-      timeout: ms('5m'),
+      timeout: {
+        request: ms('5m'),
+      },
     })
   }
 

@@ -29,7 +29,7 @@ import {logger} from './logger.js'
 import MeasureRouteFactory from './measure.route.js'
 import {getStorage, type IStorage} from './storage/base.storage.js'
 import type {TokenManager} from './token.js'
-import type {IFileList} from './types'
+import type {IFileList} from './types.js'
 import {checkSign, hashToFilename} from './util.js'
 
 interface ICounters {
@@ -76,11 +76,22 @@ export class Cluster {
         'user-agent': this.ua,
       },
       responseType: 'buffer',
-      timeout: ms('5m'),
+      timeout: {
+        request: ms('5m'),
+      },
       hooks: {
         beforeRequest: [
           async (options) => {
-            if (options.url.hostname.includes('bmclapi.bangbang93.com')) {
+            const url = options.url
+            if (!url) return
+            if (typeof url === 'string') {
+              if (url.includes('bmclapi.bangbang93.com') || url.includes('bmclapi2.bangbang93.com')) {
+                options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
+              }
+            } else if (
+              url.hostname.includes('bmclapi.bangbang93.com') ||
+              url.hostname.includes('bmclapi2.bangbang93.com')
+            ) {
               options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
             }
           },

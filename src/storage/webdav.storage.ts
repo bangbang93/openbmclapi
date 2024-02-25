@@ -7,7 +7,7 @@ import {createClient, type FileStat, type WebDAVClient} from 'webdav'
 import {z} from 'zod'
 import {fromZodError} from 'zod-validation-error'
 import {logger} from '../logger.js'
-import type {IFileInfo} from '../types'
+import type {IFileInfo} from '../types.js'
 import type {IStorage} from './base.storage.js'
 
 const storageConfigSchema = z.object({
