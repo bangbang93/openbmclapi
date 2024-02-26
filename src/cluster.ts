@@ -207,7 +207,6 @@ export class Cluster {
         concurrency: parallel,
       },
     )
-    await this.storage.gc(fileList.files)
     if (hasError) {
       throw new Error('同步失败')
     } else {

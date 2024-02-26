@@ -23,6 +23,7 @@ export async function bootstrap(version: string): Promise<void> {
   logger.info(`${files.files.length} files`)
   try {
     await cluster.syncFiles(files, configuration.sync)
+    await cluster.storage.gc(files.files)
   } catch (e) {
     if (e instanceof HTTPError) {
       logger.error({url: e.response.url}, 'download error')
