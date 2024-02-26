@@ -6,13 +6,12 @@ import {readdir, stat, unlink} from 'fs/promises'
 import {min} from 'lodash-es'
 import {join, sep} from 'path'
 import {logger} from '../logger.js'
+import type {IFileInfo} from '../types'
 import {hashToFilename} from '../util.js'
 import type {IStorage} from './base.storage.js'
 
 export class FileStorage implements IStorage {
-  constructor(
-    public readonly cacheDir: string,
-  ) {}
+  constructor(public readonly cacheDir: string) {}
 
   public async writeFile(path: string, content: Buffer): Promise<void> {
     await fse.outputFile(join(this.cacheDir, path), content)
@@ -26,10 +25,17 @@ export class FileStorage implements IStorage {
     return join(this.cacheDir, path)
   }
 
-  public async getMissingFiles<T extends {path: string; hash: string}>(files: T[]): Promise<T[]> {
-    return Bluebird.filter(files, async (file) => {
-      return !await this.exists(hashToFilename(file.hash))
-    })
+  public async getMissingFiles(files: IFileInfo[]): Promise<IFileInfo[]> {
+    return Bluebird.filter(
+      files,
+      async (file) => {
+        const st = await stat(join(this.cacheDir, file.path)).catch(() => null)
+        return st?.size !== file.size
+      },
+      {
+        concurrency: 1e3,
+      },
+    )
   }
 
   public async gc(files: {path: string; hash: string; size: number}[]): Promise<void> {
@@ -58,7 +64,7 @@ export class FileStorage implements IStorage {
     } while (queue.length !== 0)
   }
 
-  public async express(hashPath: string, req: Request, res: Response): Promise<{ bytes: number; hits: number }> {
+  public async express(hashPath: string, req: Request, res: Response): Promise<{bytes: number; hits: number}> {
     const name = req.query.name as string
     if (name) {
       res.attachment(name)
