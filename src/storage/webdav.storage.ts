@@ -62,7 +62,7 @@ export class WebdavStorage implements IStorage {
     return this.client.getFileDownloadLink(join(this.basePath, path))
   }
 
-  public async getMissingFiles<T extends {path: string; hash: string}>(files: T[]): Promise<T[]> {
+  public async getMissingFiles<T extends {path: string; hash: string; size: number}>(files: T[]): Promise<T[]> {
     const manifest = new Map<string, T>()
     for (const file of files) {
       manifest.set(file.hash, file)
@@ -85,7 +85,8 @@ export class WebdavStorage implements IStorage {
           queue.push(entry.filename)
           continue
         }
-        if (manifest.has(entry.basename)) {
+        const file = manifest.get(entry.basename)
+        if (file && file.size === entry.size) {
           this.files.set(entry.basename, {size: entry.size, path: entry.filename})
           manifest.delete(entry.basename)
         }

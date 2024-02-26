@@ -16,7 +16,7 @@ export interface IStorage {
 
   getAbsolutePath(path: string): string
 
-  getMissingFiles<T extends {path: string; hash: string}>(files: T[]): Promise<T[]>
+  getMissingFiles(files: IFileInfo[]): Promise<IFileInfo[]>
 
   gc(files: {path: string; hash: string; size: number}[]): Promise<void>
 
