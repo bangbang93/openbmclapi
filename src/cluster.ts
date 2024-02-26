@@ -499,7 +499,7 @@ export class Cluster {
       } else {
         await Bluebird.try(async () => {
           await this.disable()
-          this.connect()
+          await this.connect()
           await this.enable()
         })
           .timeout(ms('10m'), 'restart timeout')
