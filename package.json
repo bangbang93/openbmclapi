@@ -52,7 +52,6 @@
   },
   "devDependencies": {
     "@bangbang93/eslint-config-recommended": "^0.0.3",
-    "@tsconfig/esm": "^1.0.3",
     "@tsconfig/node18": "^18.2.2",
     "@types/bluebird": "^3.5.27",
     "@types/dotenv": "^6.1.1",
@@ -75,7 +74,7 @@
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
     "tsc-watch": "^6.0.4",
-    "typescript": "^5.0.4"
+    "typescript": "^5.3.3"
   },
   "npm": {
     "publish": false

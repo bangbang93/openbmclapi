@@ -6,7 +6,7 @@ import {readdir, stat, unlink} from 'fs/promises'
 import {min} from 'lodash-es'
 import {join, sep} from 'path'
 import {logger} from '../logger.js'
-import type {IFileInfo} from '../types'
+import type {IFileInfo} from '../types.js'
 import {hashToFilename} from '../util.js'
 import type {IStorage} from './base.storage.js'
 

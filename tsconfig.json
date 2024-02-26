@@ -1,5 +1,5 @@
 {
-  "extends": ["@tsconfig/node18", "@tsconfig/esm"],
+  "extends": ["@tsconfig/node18"],
   "compilerOptions": {
     "sourceMap": true,
     "noUnusedLocals": true,
