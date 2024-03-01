@@ -44,9 +44,9 @@ jobs:
       ## windows
       - run: tar -caf ${{ matrix.artifact_name }} dist nginx package.json node_modules node
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-      - run: | 
-          set SRC=(where node)
-          copy /b $SRC .
+      - run: |
+          (Get-Command node.exe).Path
+          copy $SRC node.exe
           tar -caf ${{ matrix.artifact_name }} dist package.json node_modules node.exe
         if: matrix.os == 'windows-latest'
 
