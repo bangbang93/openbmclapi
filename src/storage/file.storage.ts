@@ -29,7 +29,7 @@ export class FileStorage implements IStorage {
     return Bluebird.filter(
       files,
       async (file) => {
-        const st = await stat(join(this.cacheDir, file.path)).catch(() => null)
+        const st = await stat(join(this.cacheDir, hashToFilename(file.hash))).catch(() => null)
         return st?.size !== file.size
       },
       {
