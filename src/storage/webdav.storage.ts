@@ -105,6 +105,7 @@ export class WebdavStorage implements IStorage {
       const dir = queue.pop()
       if (!dir) break
       const entries = (await this.client.getDirectoryContents(dir)) as FileStat[]
+      entries.sort((a, b) => a.basename.localeCompare(b.basename))
       for (const entry of entries) {
         if (entry.type === 'directory') {
           queue.push(entry.filename)
