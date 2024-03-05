@@ -9,6 +9,7 @@ import {config} from './config.js'
 import {logger} from './logger.js'
 import {TokenManager} from './token.js'
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export async function bootstrap(version: string): Promise<void> {
@@ -55,7 +56,7 @@ export async function bootstrap(version: string): Promise<void> {
       process.send('ready')
     }
 
-    checkFileInterval = setTimeout(checkFile, ms('10m'))
+    checkFileInterval = setTimeout(() => checkFile, ms('10m'))
   } catch (e) {
     logger.fatal(e)
     if (process.env.NODE_ENV === 'development') {
@@ -83,7 +84,7 @@ export async function bootstrap(version: string): Promise<void> {
   let stopping = false
   const onStop = async (signal: NodeJS.Signals): Promise<void> => {
     console.log(`got ${signal}, unregistering cluster`)
-    if (stopping) process.exit(0)
+    if (stopping) process.kill(process.pid, signal)
 
     stopping = true
     clearTimeout(checkFileInterval)
@@ -97,6 +98,6 @@ export async function bootstrap(version: string): Promise<void> {
     server.close()
     cluster.nginxProcess?.kill()
   }
-  process.on('SIGTERM', onStop)
-  process.on('SIGINT', onStop)
+  process.once('SIGTERM', () => onStop)
+  process.once('SIGINT', () => onStop)
 }

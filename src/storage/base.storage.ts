@@ -1,6 +1,5 @@
 import type {NextFunction, Request, Response} from 'express'
 import {join} from 'path'
-import {cwd} from 'process'
 import type {Config} from '../config.js'
 import {logger} from '../logger.js'
 import type {IFileInfo} from '../types.js'
@@ -27,7 +26,7 @@ export function getStorage(config: Config): IStorage {
   let storage: IStorage
   switch (config.storage) {
     case 'file':
-      storage = new FileStorage(join(cwd(), 'cache'))
+      storage = new FileStorage(join(process.cwd(), 'cache'))
       break
     case 'webdav':
       storage = new WebdavStorage(config.storageOpts)

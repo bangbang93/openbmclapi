@@ -11,7 +11,7 @@ import got, {type Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
-import {clone, sum, template} from 'lodash-es'
+import {clone, sum, template, toString} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
 import {userInfo} from 'node:os'
@@ -37,6 +37,7 @@ interface ICounters {
   bytes: number
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export class Cluster {
@@ -85,12 +86,17 @@ export class Cluster {
             const url = options.url
             if (!url) return
             if (typeof url === 'string') {
-              if (url.includes('bmclapi.bangbang93.com') || url.includes('bmclapi2.bangbang93.com')) {
+              if (
+                url.includes('bmclapi.bangbang93.com') ||
+                url.includes('bmclapi2.bangbang93.com') ||
+                url.includes('localhost')
+              ) {
                 options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
               }
             } else if (
               url.hostname.includes('bmclapi.bangbang93.com') ||
-              url.hostname.includes('bmclapi2.bangbang93.com')
+              url.hostname.includes('bmclapi2.bangbang93.com') ||
+              url.hostname.includes('localhost')
             ) {
               options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
             }
@@ -110,7 +116,7 @@ export class Cluster {
   }
 
   public async getFileList(): Promise<IFileList> {
-    const FileListSchema = avsc.Type.forSchema({
+    const fileListSchema = avsc.Type.forSchema({
       type: 'array',
       items: {
         type: 'record',
@@ -127,7 +133,7 @@ export class Cluster {
     })
     const decompressed = await decompress(res.body)
     return {
-      files: FileListSchema.fromBuffer(Buffer.from(decompressed)),
+      files: fileListSchema.fromBuffer(Buffer.from(decompressed)) as IFileList['files'],
     }
   }
 
@@ -194,10 +200,7 @@ export class Cluster {
           hasError = true
           if (e instanceof HTTPError) {
             logger.error({err: e}, `下载文件${file.path}失败: ${e.response.statusCode}, url: ${e.response.url}`)
-            logger.trace(
-              {err: e, options: e.options, redirectUrls: e.response.redirectUrls},
-              e.response.body?.toString(),
-            )
+            logger.trace({err: e, options: e.options, redirectUrls: e.response.redirectUrls}, toString(e.response.body))
           } else {
             logger.error({err: e}, `下载文件${file.path}失败`)
           }
@@ -218,7 +221,7 @@ export class Cluster {
     const app = http2Express(express)
     app.enable('trust proxy')
 
-    app.get('/auth', async (req: Request, res: Response, next: NextFunction) => {
+    app.get('/auth', (req: Request, res: Response, next: NextFunction) => {
       try {
         const oldUrl = req.get('x-original-uri')
         if (!oldUrl) return res.status(403).send('invalid sign')
@@ -239,6 +242,7 @@ export class Cluster {
     if (!config.disableAccessLog) {
       app.use(morgan('combined'))
     }
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     app.get('/download/:hash(\\w+)', async (req: Request, res: Response, next: NextFunction) => {
       try {
         const hash = req.params.hash.toLowerCase()
@@ -333,8 +337,8 @@ export class Cluster {
       this.counters.bytes += parseInt(match.groups?.size ?? '0', 10) || 0
     })
 
-    this.interval = setInterval(async () => {
-      await fse.ftruncate(logFd.fd)
+    this.interval = setInterval(() => {
+      void fse.ftruncate(logFd.fd)
     }, ms('60s'))
   }
 
@@ -359,7 +363,7 @@ export class Cluster {
     this.socket.on('message', (msg) => {
       logger.info(msg)
     })
-    this.socket.on('connect', async () => {
+    this.socket.on('connect', () => {
       logger.debug('connected')
     })
     this.socket.on('disconnect', (reason) => {
@@ -394,7 +398,7 @@ export class Cluster {
   public async disable(): Promise<void> {
     clearTimeout(this.keepAliveInterval)
     this.wantEnable = false
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       this.socket?.emit('disable', null, ([err, ack]: [unknown, unknown]) => {
         this.isEnabled = false
         if (err || ack !== true) return reject(err || ack)
@@ -421,7 +425,7 @@ export class Cluster {
     if (!this.isEnabled) {
       throw new Error('节点未启用')
     }
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       const counters = clone(this.counters)
       this.socket?.emit(
         'keep-alive',
@@ -452,15 +456,15 @@ export class Cluster {
     await fse.outputFile(join(this.tmpDir, 'key.pem'), cert.key)
   }
 
-  public exit(code: number = 0): never {
+  public exit(code: number = 0): void {
     if (this.nginxProcess) {
       this.nginxProcess.kill()
     }
-    process.exit(code)
+    process.kill(process.pid, code)
   }
 
   private async _enable(): Promise<void> {
-    return new Bluebird<void>((resolve, reject) => {
+    return await new Bluebird<void>((resolve, reject) => {
       this.socket?.emit(
         'enable',
         {
@@ -475,7 +479,9 @@ export class Cluster {
           if (ack !== true) return reject(ack)
           resolve()
           logger.info(colors.rainbow('start doing my job'))
-          this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
+          this.keepAliveInterval = setTimeout(() => {
+            void this._keepAlive()
+          }, ms('1m'))
         },
       )
     }).timeout(ms('5m'), '节点注册超时')
@@ -483,7 +489,7 @@ export class Cluster {
 
   private async _keepAlive(): Promise<void> {
     try {
-      const status = await Bluebird.try(async () => this.keepAlive()).timeout(ms('10s'), 'keep alive timeout')
+      const status = await Bluebird.try(async () => await this.keepAlive()).timeout(ms('10s'), 'keep alive timeout')
       if (!status) {
         logger.fatal('kicked by server')
         this.exit(1)
@@ -509,11 +515,13 @@ export class Cluster {
           })
       }
     } finally {
-      this.keepAliveInterval = setTimeout(this._keepAlive.bind(this), ms('1m'))
+      this.keepAliveInterval = setTimeout(() => {
+        void this._keepAlive()
+      }, ms('1m'))
     }
   }
 
-  private async onConnectionError(event: string, err: Error): Promise<void> {
+  private onConnectionError(event: string, err: Error): void {
     console.error(`${event}: cannot connect to server`, err)
     if (this.server) {
       this.server.close(() => {

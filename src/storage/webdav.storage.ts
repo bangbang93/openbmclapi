@@ -55,7 +55,7 @@ export class WebdavStorage implements IStorage {
   }
 
   public async exists(path: string): Promise<boolean> {
-    return this.client.exists(join(this.basePath, path))
+    return await this.client.exists(join(this.basePath, path))
   }
 
   public getAbsolutePath(path: string): string {
@@ -120,6 +120,7 @@ export class WebdavStorage implements IStorage {
     } while (queue.length !== 0)
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async express(hashPath: string, req: Request, res: Response): Promise<{bytes: number; hits: number}> {
     const path = join(this.basePath, hashPath)
     const file = this.client.getFileDownloadLink(path)

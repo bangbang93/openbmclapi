@@ -4,16 +4,18 @@ import {readFileSync} from 'fs'
 import {fileURLToPath} from 'url'
 import {bootstrap} from './bootstrap.js'
 
-const packageJson = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'))
+const packageJson = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8')) as {
+  version: string
+}
 
 config()
 if (process.env.NO_DAEMON || !cluster.isPrimary) {
-  bootstrap(packageJson.version)
-    .catch((err) => {
-      // eslint-disable-next-line no-console
-      console.error(err)
-      process.exit(1)
-    })
+  bootstrap(packageJson.version).catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error(err)
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  })
 }
 
 if (!process.env.NO_DAEMON && cluster.isPrimary) {

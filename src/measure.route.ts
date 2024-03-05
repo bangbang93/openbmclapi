@@ -5,7 +5,7 @@ import {checkSign} from './util.js'
 export default function MeasureRouteFactory(config: Config): Router {
   const router = express.Router()
 
-  const MeasureRoute = router
+  const measureRoute = router
 
   router.get('/:size(\\d+)', (req, res) => {
     const isSignValid = checkSign(req.baseUrl + req.path, config.clusterSecret, req.query as NodeJS.Dict<string>)
@@ -20,5 +20,5 @@ export default function MeasureRouteFactory(config: Config): Router {
     res.end()
   })
 
-  return MeasureRoute
+  return measureRoute
 }
