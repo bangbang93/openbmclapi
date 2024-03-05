@@ -57,7 +57,7 @@ docker compose up -d
 |---------------------|----|--------------|--------------------------------------------------------------------------------------------------------|
 | CLUSTER_ID          | 是  | -            | 集群 ID                                                                                                  |
 | CLUSTER_SECRET      | 是  | -            | 集群密钥                                                                                                   |
-| CLUSTER_IP          | 否  | 出口IP         | 集群 IP                                                                                                  |
+| CLUSTER_IP          | 否  | 自动获取公网出口IP   | 用户访问时使用的 IP 或域名                                                                                        |
 | CLUSTER_PORT        | 否  | 4000         | 监听端口                                                                                                   |
 | CLUSTER_PUBLIC_PORT | 否  | CLUSTER_PORT | 对外端口                                                                                                   |
 | CLUSTER_BYOC        | 否  | false        | 是否使用自定义域名, (BYOC=Bring you own certificate),当使用国内服务器需要备案时, 需要启用这个参数来使用你自己的域名, 并且你需要自己提供ssl termination |
