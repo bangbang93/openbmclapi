@@ -118,4 +118,4 @@ openbmclapi 会自行同步需要的文件, 但是初次同步可能会速度过
 - `rsync -rzvP openbmclapi@home.933.moe::openbmclapi cache`
 - `rsync -avP openbmclapi@storage.yserver.ink::bmcl cache`
 - `rsync -azvrhP openbmclapi@openbmclapi.home.mxd.moe::volume cache`
-- `rsync -avP --delete --exclude="@Recently-Snapshot" --exclude="@Recycle" openbmclapi@lineapp.ltd::BMCLAPI-CACHE /pathtoyourcache/（密码是openbmclapi123）`
+- `rsync -avP --delete --exclude="@Recently-Snapshot" --exclude="@Recycle" openbmclapi@lineapp.ltd::BMCLAPI-CACHE cache（密码是openbmclapi123）`
