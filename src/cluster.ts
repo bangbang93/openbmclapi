@@ -78,6 +78,7 @@ export class Cluster {
       },
       responseType: 'buffer',
       timeout: {
+        connect: ms('10s'),
         request: ms('5m'),
       },
       hooks: {
