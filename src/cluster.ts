@@ -192,7 +192,7 @@ export class Cluster {
           const isFileCorrect = validateFile(res.body, file.hash)
           if (!isFileCorrect) {
             hasError = true
-            logger.error(`文件${file.path}校验失败`)
+            logger.error({redirectUrls: res.redirectUrls}, `文件${file.path}校验失败`)
             return
           }
           await this.storage.writeFile(hashToFilename(file.hash), res.body, file)
