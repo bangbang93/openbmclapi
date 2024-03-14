@@ -15,6 +15,7 @@ import {clone, sum, template, toString} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
 import {userInfo} from 'node:os'
+import {clearTimeout} from 'node:timers'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
 import pRetry from 'p-retry'
@@ -468,28 +469,40 @@ export class Cluster {
   }
 
   private async _enable(): Promise<void> {
-    return await new Bluebird<void>((resolve, reject) => {
-      this.socket?.emit(
-        'enable',
-        {
-          host: this.host,
-          port: this.publicPort,
-          version: this.version,
-          byoc: config.byoc,
-          noFastEnable: process.env.NO_FAST_ENABLE === 'true',
-          flavor: config.flavor,
-        },
-        ([err, ack]: [unknown, unknown]) => {
-          if (err) return reject(err)
-          if (ack !== true) return reject(ack)
-          resolve()
-          logger.info(colors.rainbow('start doing my job'))
-          this.keepAliveInterval = setTimeout(() => {
-            void this._keepAlive()
-          }, ms('1m'))
-        },
-      )
-    }).timeout(ms('5m'), '节点注册超时')
+    let err: unknown
+    let ack: unknown
+    try {
+      const res = (await this.socket?.timeout(ms('5m')).emitWithAck('enable', {
+        host: this.host,
+        port: this.publicPort,
+        version: this.version,
+        byoc: config.byoc,
+        noFastEnable: process.env.NO_FAST_ENABLE === 'true',
+        flavor: config.flavor,
+      })) as unknown
+      if (Array.isArray(res)) {
+        ;[err, ack] = res as unknown[]
+      }
+    } catch (e) {
+      throw new Error('节点注册超时', {cause: e})
+    }
+
+    if (err) {
+      if (typeof err === 'object' && 'message' in err) {
+        throw new Error(err.message as string)
+      }
+    }
+    if (ack !== true) {
+      throw new Error('节点注册失败')
+    }
+
+    logger.info(colors.rainbow('start doing my job'))
+    if (this.keepAliveInterval) {
+      clearTimeout(this.keepAliveInterval)
+    }
+    this.keepAliveInterval = setTimeout(() => {
+      void this._keepAlive()
+    }, ms('1m'))
   }
 
   private async _keepAlive(): Promise<void> {
