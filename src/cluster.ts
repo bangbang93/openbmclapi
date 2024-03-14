@@ -17,6 +17,7 @@ import ms from 'ms'
 import {userInfo} from 'node:os'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
+import pRetry from 'p-retry'
 import {basename, dirname, join} from 'path'
 import prettyBytes from 'pretty-bytes'
 import ProgressBar from 'progress'
@@ -175,21 +176,23 @@ export class Cluster {
         } else {
           logger.info(`[${i + 1}/${missingFiles.length}] ${colors.green('downloading')} ${colors.underline(file.path)}`)
         }
-        let lastProgress = 0
         try {
-          const res = await this.got
-            .get<Buffer>(file.path.substring(1), {
-              searchParams: {
-                noopen,
-              },
-              retry: {
-                limit: 10,
-              },
-            })
-            .on('downloadProgress', (progress) => {
-              bar.tick(progress.transferred - lastProgress)
-              lastProgress = progress.transferred
-            })
+          const res = await pRetry(
+            () => {
+              return this.got.get<Buffer>(file.path.substring(1), {
+                searchParams: {
+                  noopen,
+                },
+                retry: {
+                  limit: 0,
+                },
+              })
+            },
+            {
+              maxRetryTime: 10,
+            },
+          )
+          bar.tick(res.body.length)
           const isFileCorrect = validateFile(res.body, file.hash)
           if (!isFileCorrect) {
             hasError = true
