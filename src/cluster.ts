@@ -477,6 +477,7 @@ export class Cluster {
           version: this.version,
           byoc: config.byoc,
           noFastEnable: process.env.NO_FAST_ENABLE === 'true',
+          flavor: config.flavor,
         },
         ([err, ack]: [unknown, unknown]) => {
           if (err) return reject(err)

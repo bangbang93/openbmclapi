@@ -1,6 +1,11 @@
 import dotenv from 'dotenv'
 import {z} from 'zod'
 
+export interface IConfigFlavor {
+  runtime: string
+  storage: string
+}
+
 export class Config {
   public static instance: Config
 
@@ -15,6 +20,7 @@ export class Config {
   public readonly enableNginx: boolean = false
   public readonly storage: string = 'file'
   public readonly storageOpts: unknown
+  public readonly flavor: IConfigFlavor
 
   private constructor() {
     if (!process.env.CLUSTER_ID) {
@@ -46,6 +52,10 @@ export class Config {
     }
     if (process.env.DISABLE_ACCESS_LOG) {
       this.disableAccessLog = true
+    }
+    this.flavor = {
+      runtime: `Node.js/${process.version}`,
+      storage: this.storage,
     }
   }
 
