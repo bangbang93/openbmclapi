@@ -7,6 +7,7 @@ services:
     volumes:
     - ./cache:/opt/openbmclapi/cache
     network_mode: host
+    user: "${UID-1000}:${GID-1000}"
     logging:
       driver: 'json-file'
       options:

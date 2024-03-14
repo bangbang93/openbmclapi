@@ -2,6 +2,7 @@ import {decompress} from '@mongodb-js/zstd'
 import avsc, {type schema} from 'avsc'
 import Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
+import {MultiBar} from 'cli-progress'
 import colors from 'colors/safe.js'
 import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
@@ -11,7 +12,7 @@ import got, {type Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
-import {clone, sum, template, toString} from 'lodash-es'
+import {clone, template, toString} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
 import {userInfo} from 'node:os'
@@ -21,7 +22,6 @@ import pMap from 'p-map'
 import pRetry from 'p-retry'
 import {basename, dirname, join} from 'path'
 import prettyBytes from 'pretty-bytes'
-import ProgressBar from 'progress'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
@@ -81,6 +81,7 @@ export class Cluster {
       responseType: 'buffer',
       timeout: {
         connect: ms('10s'),
+        response: ms('10s'),
         request: ms('5m'),
       },
       hooks: {
@@ -161,39 +162,39 @@ export class Cluster {
       }
     }
     logger.info(syncConfig, '同步策略')
-    const totalSize = sum(missingFiles.map((file) => file.size))
-    const bar = new ProgressBar('downloading [:bar] :current/:total eta:etas :percent :rateBps', {
-      total: totalSize,
-      width: 80,
+    const multibar = new MultiBar({
+      format: ' {bar} | {filename} | {value}/{total}',
+      noTTYOutput: !process.stdout.isTTY,
+      notTTYSchedule: ms('10s'),
     })
+    const totalBar = multibar.create(missingFiles.length, 0, {filename: '总文件数'})
     const parallel = syncConfig.concurrency
     const noopen = syncConfig.source === 'center' ? '1' : ''
     let hasError = false
     await pMap(
       missingFiles,
-      async (file, i) => {
-        if (process.stderr.isTTY) {
-          bar.interrupt(`${colors.green('downloading')} ${colors.underline(file.path)}`)
-        } else {
-          logger.info(`[${i + 1}/${missingFiles.length}] ${colors.green('downloading')} ${colors.underline(file.path)}`)
-        }
+      async (file) => {
+        const bar = multibar.create(file.size, 0, {filename: file.path})
         try {
           const res = await pRetry(
             () => {
-              return this.got.get<Buffer>(file.path.substring(1), {
-                searchParams: {
-                  noopen,
-                },
-                retry: {
-                  limit: 0,
-                },
-              })
+              return this.got
+                .get<Buffer>(file.path.substring(1), {
+                  searchParams: {
+                    noopen,
+                  },
+                  retry: {
+                    limit: 0,
+                  },
+                })
+                .on('downloadProgress', (progress) => {
+                  bar.update(progress.transferred)
+                })
             },
             {
               maxRetryTime: 10,
             },
           )
-          bar.tick(res.body.length)
           const isFileCorrect = validateFile(res.body, file.hash)
           if (!isFileCorrect) {
             hasError = true
@@ -209,12 +210,17 @@ export class Cluster {
           } else {
             logger.error({err: e}, `下载文件${file.path}失败`)
           }
+        } finally {
+          totalBar.increment()
+          bar.stop()
+          multibar.remove(bar)
         }
       },
       {
         concurrency: parallel,
       },
     )
+    multibar.stop()
     if (hasError) {
       throw new Error('同步失败')
     } else {
