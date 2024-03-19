@@ -363,7 +363,7 @@ export class Cluster {
   }
 
   public async connect(): Promise<void> {
-    if (this.socket) return
+    if (this.socket?.connected) return
     this.socket = connect(this.prefixUrl, {
       transports: ['websocket'],
       auth: {
@@ -523,7 +523,6 @@ export class Cluster {
       this.keepAliveError++
       console.error('keep alive error')
       console.error(e)
-      console.log(this.socket)
       if (this.keepAliveError >= 5) {
         console.error('exit')
       } else {
