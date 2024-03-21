@@ -22,5 +22,6 @@ async function doPortMap(client: UpnpClient, port: number, publicPort: number): 
     private: port,
     ttl: second('1h'),
     protocol: 'tcp',
+    description: 'openbmclapi',
   })
 }
