@@ -32,6 +32,7 @@ import MeasureRouteFactory from './measure.route.js'
 import {getStorage, type IStorage} from './storage/base.storage.js'
 import type {TokenManager} from './token.js'
 import type {IFileList} from './types.js'
+import {setupUpnp} from './upnp.js'
 import {checkSign, hashToFilename} from './util.js'
 
 interface ICounters {
@@ -117,6 +118,9 @@ export class Cluster {
 
   public async init(): Promise<void> {
     await this.storage.init?.()
+    if (config.enableUpnp) {
+      await setupUpnp(config.port, config.clusterPublicPort)
+    }
   }
 
   public async getFileList(): Promise<IFileList> {

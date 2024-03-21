@@ -18,6 +18,7 @@ export class Config {
   public readonly disableAccessLog: boolean = false
 
   public readonly enableNginx: boolean = false
+  public readonly enableUpnp: boolean = false
   public readonly storage: string = 'file'
   public readonly storageOpts: unknown
   public readonly flavor: IConfigFlavor
@@ -52,6 +53,9 @@ export class Config {
     }
     if (process.env.DISABLE_ACCESS_LOG) {
       this.disableAccessLog = true
+    }
+    if (process.env.ENABLE_UPNP) {
+      this.enableUpnp = true
     }
     this.flavor = {
       runtime: `Node.js/${process.version}`,
