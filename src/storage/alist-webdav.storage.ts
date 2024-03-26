@@ -4,7 +4,6 @@ import Keyv from 'keyv'
 import {KeyvFile} from 'keyv-file'
 import ms from 'ms'
 import {join} from 'path'
-import {cwd} from 'process'
 import {WebdavStorage} from './webdav.storage.js'
 
 export class AlistWebdavStorage extends WebdavStorage {
@@ -12,12 +11,12 @@ export class AlistWebdavStorage extends WebdavStorage {
     namespace: 'redirectUrl',
     ttl: ms('1h'),
     store: new KeyvFile({
-      filename: join(cwd(), 'cache', 'redirectUrl.json'),
+      filename: join(process.cwd(), 'cache', 'redirectUrl.json'),
       writeDelay: ms('1m'),
     }),
   })
 
-  public async express(hashPath: string, req: Request, res: Response): Promise<{ bytes: number; hits: number }> {
+  public async express(hashPath: string, req: Request, res: Response): Promise<{bytes: number; hits: number}> {
     const cachedUrl = await this.redirectUrlCache.get(hashPath)
     const size = this.getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
     if (cachedUrl) {
@@ -26,14 +25,16 @@ export class AlistWebdavStorage extends WebdavStorage {
     }
     const path = join(this.basePath, hashPath)
     const url = this.client.getFileDownloadLink(path)
-    const resp = await got.get(url, {followRedirect: false,
+    const resp = await got.get(url, {
+      followRedirect: false,
       responseType: 'buffer',
       headers: {
         range: req.headers.range,
       },
       https: {
         rejectUnauthorized: false,
-      }})
+      },
+    })
     if (resp.statusCode >= 200 && resp.statusCode < 300) {
       res.status(resp.statusCode).send(resp.body)
       return {bytes: resp.body.length, hits: 1}
