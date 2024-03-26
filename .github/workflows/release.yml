@@ -39,15 +39,18 @@ jobs:
       - run: npm ci
       ## linux & macos
       - run: npm run build
-      - run: cp $(which node) .
+      - run: |
+          cp $(which node) .
+          cp platforms/linux/run.sh .
+          tar -caf ${{ matrix.artifact_name }} dist nginx package.json node_modules node run.sh
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+
       ## windows
-      - run: tar -caf ${{ matrix.artifact_name }} dist nginx package.json node_modules node
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       - run: |
           $SRC = (Get-Command node.exe).Path
           copy $SRC node.exe
-          tar -caf ${{ matrix.artifact_name }} dist package.json node_modules node.exe
+          copy platforms/windows/run.ps1 .
+          tar -caf ${{ matrix.artifact_name }} dist package.json node_modules node.exe run.ps1
         if: matrix.os == 'windows-latest'
 
       - name: Upload binaries to release
