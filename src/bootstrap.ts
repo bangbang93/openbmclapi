@@ -1,6 +1,7 @@
 import nodeCluster from 'cluster'
 import colors from 'colors/safe.js'
 import {HTTPError} from 'got'
+import {max} from 'lodash-es'
 import ms from 'ms'
 import {join} from 'path'
 import {fileURLToPath} from 'url'
@@ -8,6 +9,7 @@ import {Cluster} from './cluster.js'
 import {config} from './config.js'
 import {logger} from './logger.js'
 import {TokenManager} from './token.js'
+import {IFileList} from './types.js'
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
@@ -56,7 +58,9 @@ export async function bootstrap(version: string): Promise<void> {
       process.send('ready')
     }
 
-    checkFileInterval = setTimeout(() => checkFile, ms('10m'))
+    checkFileInterval = setTimeout(() => {
+      void checkFile(files)
+    }, ms('10s'))
   } catch (e) {
     logger.fatal(e)
     if (process.env.NODE_ENV === 'development') {
@@ -65,19 +69,25 @@ export async function bootstrap(version: string): Promise<void> {
       cluster.exit(1)
     }
   }
-  async function checkFile(): Promise<void> {
+  async function checkFile(lastFileList: IFileList): Promise<void> {
     logger.debug('refresh files')
     try {
-      const files = await cluster.getFileList()
+      const lastModified = max(lastFileList.files.map((file) => file.mtime))
+      const fileList = await cluster.getFileList(lastModified)
+      if (fileList.files.length === 0) {
+        logger.debug('没有新文件')
+        return
+      }
+      lastFileList = fileList
       const configuration = await cluster.getConfiguration()
       await cluster.syncFiles(files, configuration.sync)
     } finally {
       checkFileInterval = setTimeout(() => {
-        checkFile().catch((e) => {
+        checkFile(lastFileList).catch((e) => {
           console.error('check file error')
           console.error(e)
         })
-      }, ms('10m'))
+      }, ms('10s'))
     }
   }
 

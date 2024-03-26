@@ -1,5 +1,4 @@
 import {decompress} from '@mongodb-js/zstd'
-import avsc, {type schema} from 'avsc'
 import Bluebird from 'bluebird'
 import {ChildProcess, spawn} from 'child_process'
 import {MultiBar} from 'cli-progress'
@@ -26,6 +25,7 @@ import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
 import {config, type OpenbmclapiAgentConfiguration, OpenbmclapiAgentConfigurationSchema} from './config.js'
+import {FileListSchema} from './constants.js'
 import {validateFile} from './file.js'
 import {logger} from './logger.js'
 import MeasureRouteFactory from './measure.route.js'
@@ -123,25 +123,22 @@ export class Cluster {
     }
   }
 
-  public async getFileList(): Promise<IFileList> {
-    const fileListSchema = avsc.Type.forSchema({
-      type: 'array',
-      items: {
-        type: 'record',
-        fields: [
-          {name: 'path', type: 'string'},
-          {name: 'hash', type: 'string'},
-          {name: 'size', type: 'long'},
-        ],
-      } as schema.RecordType,
-    })
+  public async getFileList(lastModified?: number): Promise<IFileList> {
     const res = await this.got.get('openbmclapi/files', {
       responseType: 'buffer',
       cache: this.requestCache,
+      searchParams: {
+        lastModified,
+      },
     })
+    if (res.statusCode === 304) {
+      return {
+        files: [],
+      }
+    }
     const decompressed = await decompress(res.body)
     return {
-      files: fileListSchema.fromBuffer(Buffer.from(decompressed)) as IFileList['files'],
+      files: FileListSchema.fromBuffer(Buffer.from(decompressed)) as IFileList['files'],
     }
   }
 
@@ -433,6 +430,7 @@ export class Cluster {
       path: `/download/${hash}`,
       hash,
       size: res.body.length,
+      mtime: Date.now(),
     })
   }
 
