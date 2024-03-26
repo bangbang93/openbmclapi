@@ -473,7 +473,8 @@ export class Cluster {
     if (this.nginxProcess) {
       this.nginxProcess.kill()
     }
-    process.kill(process.pid, code)
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(code)
   }
 
   private async _enable(): Promise<void> {

@@ -94,7 +94,10 @@ export async function bootstrap(version: string): Promise<void> {
   let stopping = false
   const onStop = async (signal: NodeJS.Signals): Promise<void> => {
     console.log(`got ${signal}, unregistering cluster`)
-    if (stopping) process.kill(process.pid, signal)
+    if (stopping) {
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(1)
+    }
 
     stopping = true
     clearTimeout(checkFileInterval)
@@ -108,6 +111,10 @@ export async function bootstrap(version: string): Promise<void> {
     server.close()
     cluster.nginxProcess?.kill()
   }
-  process.once('SIGTERM', () => onStop)
-  process.once('SIGINT', () => onStop)
+  process.once('SIGTERM', (signal) => {
+    void onStop(signal)
+  })
+  process.once('SIGINT', (signal) => {
+    void onStop(signal)
+  })
 }
