@@ -60,7 +60,7 @@ export async function bootstrap(version: string): Promise<void> {
 
     checkFileInterval = setTimeout(() => {
       void checkFile(files)
-    }, ms('10s'))
+    }, ms('10m'))
   } catch (e) {
     logger.fatal(e)
     if (process.env.NODE_ENV === 'development') {
@@ -87,7 +87,7 @@ export async function bootstrap(version: string): Promise<void> {
           console.error('check file error')
           console.error(e)
         })
-      }, ms('10s'))
+      }, ms('10m'))
     }
   }
 

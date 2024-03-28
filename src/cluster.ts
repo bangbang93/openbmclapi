@@ -14,6 +14,7 @@ import http2Express from 'http2-express-bridge'
 import {clone, template, toString} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
+import {constants} from 'node:http2'
 import {userInfo} from 'node:os'
 import {clearTimeout} from 'node:timers'
 import {tmpdir} from 'os'
@@ -131,7 +132,7 @@ export class Cluster {
         lastModified,
       },
     })
-    if (res.statusCode === 304) {
+    if (res.statusCode === constants.HTTP_STATUS_NO_CONTENT) {
       return {
         files: [],
       }
