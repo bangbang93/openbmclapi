@@ -11,6 +11,7 @@ import got, {type Got, HTTPError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
+import {Agent as HttpsAgent} from 'https'
 import {clone, template, toString} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
@@ -85,6 +86,11 @@ export class Cluster {
         connect: ms('10s'),
         response: ms('10s'),
         request: ms('5m'),
+      },
+      agent: {
+        https: new HttpsAgent({
+          keepAlive: true,
+        }),
       },
       hooks: {
         beforeRequest: [
