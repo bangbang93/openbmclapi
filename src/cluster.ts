@@ -389,6 +389,9 @@ export class Cluster {
       logger.warn(`与服务器断开连接: ${reason}`)
       this.isEnabled = false
     })
+    this.socket.on('exception', (err) => {
+      logger.error(err, 'exception')
+    })
 
     const io = this.socket.io
     io.on('reconnect', (attempt: number) => {
