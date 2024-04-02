@@ -20,6 +20,7 @@ import {clearTimeout} from 'node:timers'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
 import pRetry from 'p-retry'
+import pTimeout from 'p-timeout'
 import {basename, dirname, join} from 'path'
 import prettyBytes from 'pretty-bytes'
 import {connect, Socket} from 'socket.io-client'
@@ -439,24 +440,22 @@ export class Cluster {
     if (!this.isEnabled) {
       throw new Error('节点未启用')
     }
-    return await new Promise((resolve, reject) => {
-      const counters = clone(this.counters)
-      this.socket?.emit(
-        'keep-alive',
-        {
-          time: new Date(),
-          ...counters,
-        },
-        ([err, date]: [unknown, string]) => {
-          if (err) return reject(err)
-          const bytes = prettyBytes(counters.bytes, {binary: true})
-          logger.info(`keep alive success, serve ${counters.hits} files, ${bytes}`)
-          this.counters.hits -= counters.hits
-          this.counters.bytes -= counters.bytes
-          resolve(!!date)
-        },
-      )
-    })
+    if (!this.socket) {
+      throw new Error('未连接到服务器')
+    }
+
+    const counters = clone(this.counters)
+    const [err, date] = (await this.socket.emitWithAck('keep-alive', {
+      time: new Date(),
+      ...counters,
+    })) as [object, unknown]
+
+    if (err) throw new Error('keep alive error', {cause: err})
+    const bytes = prettyBytes(counters.bytes, {binary: true})
+    logger.info(`keep alive success, serve ${counters.hits} files, ${bytes}`)
+    this.counters.hits -= counters.hits
+    this.counters.bytes -= counters.bytes
+    return !!date
   }
 
   public async requestCert(): Promise<void> {
@@ -516,8 +515,11 @@ export class Cluster {
   }
 
   private async _keepAlive(): Promise<void> {
+    logger.trace('start keep alive')
     try {
-      const status = await Bluebird.try(async () => await this.keepAlive()).timeout(ms('10s'), 'keep alive timeout')
+      const status = await pTimeout(this.keepAlive(), {
+        milliseconds: ms('10s'),
+      })
       if (!status) {
         logger.fatal('kicked by server')
         this.exit(1)
