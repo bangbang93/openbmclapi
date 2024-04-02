@@ -550,6 +550,9 @@ export class Cluster {
           })
       }
     } finally {
+      if (this.keepAliveInterval) {
+        clearTimeout(this.keepAliveInterval)
+      }
       this.keepAliveInterval = setTimeout(() => {
         void this._keepAlive()
       }, ms('1m'))
