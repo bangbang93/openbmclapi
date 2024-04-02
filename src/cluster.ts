@@ -536,11 +536,8 @@ export class Cluster {
       this.keepAliveError = 0
     } catch (e) {
       this.keepAliveError++
-      console.error('keep alive error')
-      console.error(e)
-      if (this.keepAliveError >= 5) {
-        console.error('exit')
-      } else {
+      logger.error('keep alive error')
+      if (this.keepAliveError >= 3) {
         await Bluebird.try(async () => {
           await this.disable()
           await this.connect()
@@ -548,7 +545,7 @@ export class Cluster {
         })
           .timeout(ms('10m'), 'restart timeout')
           .catch((e) => {
-            console.error(e, 'restart failed')
+            logger.error(e, 'restart failed')
             this.exit(1)
           })
       }
