@@ -346,7 +346,7 @@ export class Cluster {
     tail.on('line', (line: string) => {
       const match = line.match(logRegexp)
       if (!match) {
-        console.log(`cannot parse nginx log: ${line}`)
+        logger.debug(`cannot parse nginx log: ${line}`)
         return
       }
       this.counters.hits++
