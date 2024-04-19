@@ -50,18 +50,31 @@ export class TokenManager {
         },
       })
       .json<{token: string; ttl: number}>()
-    setTimeout(
-      () => {
-        this.refreshToken().catch((err) => {
-          logger.error(err, 'refresh token error')
-        })
-      },
-      token.ttl - ms('10m'),
-    )
+    this.scheduleRefreshToken(token.ttl)
     return token.token
   }
 
+  private scheduleRefreshToken(ttl: number): void {
+    const next = Math.max(ttl - ms('10m'), ttl / 2)
+    setTimeout(() => {
+      this.refreshToken().catch((err) => {
+        logger.error(err, 'refresh token error')
+      })
+    }, next)
+    logger.trace(`schedule refresh token in ${next}ms`)
+  }
+
   private async refreshToken(): Promise<void> {
-    this.token = await this.fetchToken()
+    const token = await this.got
+      .post('openbmclapi-agent/token', {
+        json: {
+          clusterId: this.clusterId,
+          token: this.token,
+        },
+      })
+      .json<{token: string; ttl: number}>()
+    logger.debug('success fresh token')
+    this.scheduleRefreshToken(token.ttl)
+    this.token = token.token
   }
 }
