@@ -23,6 +23,7 @@ export class WebdavStorage implements IStorage {
   protected readonly basePath: string
 
   protected files = new Map<string, {size: number; path: string}>()
+  protected emptyFiles = new Set<string>()
 
   constructor(storageConfig: unknown) {
     try {
@@ -50,6 +51,10 @@ export class WebdavStorage implements IStorage {
   }
 
   public async writeFile(path: string, content: Buffer, fileInfo: IFileInfo): Promise<void> {
+    if (content.length === 0) {
+      this.emptyFiles.add(path)
+      return
+    }
     await this.client.putFileContents(join(this.basePath, path), content)
     this.files.set(fileInfo.hash, {size: content.length, path: fileInfo.path})
   }
@@ -122,6 +127,10 @@ export class WebdavStorage implements IStorage {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   public async express(hashPath: string, req: Request, res: Response): Promise<{bytes: number; hits: number}> {
+    if (this.emptyFiles.has(hashPath)) {
+      res.end()
+      return {bytes: 0, hits: 1}
+    }
     const path = join(this.basePath, hashPath)
     const file = this.client.getFileDownloadLink(path)
     res.redirect(file)

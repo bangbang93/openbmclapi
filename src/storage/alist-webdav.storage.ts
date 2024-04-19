@@ -17,6 +17,10 @@ export class AlistWebdavStorage extends WebdavStorage {
   })
 
   public async express(hashPath: string, req: Request, res: Response): Promise<{bytes: number; hits: number}> {
+    if (this.emptyFiles.has(hashPath)) {
+      res.end()
+      return {bytes: 0, hits: 1}
+    }
     const cachedUrl = await this.redirectUrlCache.get(hashPath)
     const size = this.getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
     if (cachedUrl) {
