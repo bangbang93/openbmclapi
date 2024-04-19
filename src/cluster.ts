@@ -369,12 +369,20 @@ export class Cluster {
     })
   }
 
-  public async connect(): Promise<void> {
+  public connect(): void {
     if (this.socket?.connected) return
     this.socket = connect(this.prefixUrl, {
       transports: ['websocket'],
-      auth: {
-        token: await this.tokenManager.getToken(),
+      auth: (cb) => {
+        this.tokenManager
+          .getToken()
+          .then((token) => {
+            cb({token})
+          })
+          .catch((e) => {
+            logger.error(e, 'get token error')
+            this.exit(1)
+          })
       },
     })
     this.socket.on('error', this.onConnectionError.bind(this, 'error'))

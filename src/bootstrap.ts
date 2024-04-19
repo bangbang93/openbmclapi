@@ -34,7 +34,7 @@ export async function bootstrap(version: string): Promise<void> {
     throw e
   }
 
-  await cluster.connect()
+  cluster.connect()
   const proto = config.byoc ? 'http' : 'https'
   if (proto === 'https') {
     logger.info('请求证书')
