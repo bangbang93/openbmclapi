@@ -40,6 +40,8 @@ interface ICounters {
   bytes: number
 }
 
+const whiteListDomain = ['localhost', 'bangbang93.com']
+
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -96,16 +98,16 @@ export class Cluster {
             if (!url) return
             if (typeof url === 'string') {
               if (
-                url.includes('bmclapi.bangbang93.com') ||
-                url.includes('bmclapi2.bangbang93.com') ||
-                url.includes('localhost')
+                whiteListDomain.some((domain) => {
+                  return url.includes(domain)
+                })
               ) {
                 options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
               }
             } else if (
-              url.hostname.includes('bmclapi.bangbang93.com') ||
-              url.hostname.includes('bmclapi2.bangbang93.com') ||
-              url.hostname.includes('localhost')
+              whiteListDomain.some((domain) => {
+                return url.hostname.includes(domain)
+              })
             ) {
               options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`
             }
