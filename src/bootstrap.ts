@@ -59,7 +59,10 @@ export async function bootstrap(version: string): Promise<void> {
     }
 
     checkFileInterval = setTimeout(() => {
-      void checkFile(files)
+      void checkFile(files).catch((e) => {
+        console.error('check file error')
+        console.error(e)
+      })
     }, ms('10m'))
   } catch (e) {
     logger.fatal(e)
