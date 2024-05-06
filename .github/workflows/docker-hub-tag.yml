@@ -27,6 +27,6 @@ jobs:
           tags: |
             bangbang93/openbmclapi
             bangbang93/openbmclapi:${{env.RELEASE_VERSION}}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
