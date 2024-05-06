@@ -11,46 +11,24 @@ default:
 
 docker:
   stage: deploy
-  image: docker
-  services:
-    - docker:dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  only: [master]
-  before_script:
-    - until docker info; do sleep 1; done
+  image:
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: [""]
   script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker buildx create --use
-    - |
-      docker buildx build \
-        --cache-from type=registry,ref=$CI_REGISTRY_IMAGE/cache \
-        --cache-to type=registry,ref=$CI_REGISTRY_IMAGE/cache,mode=max \
-        --tag $CI_REGISTRY_IMAGE \
-        --push \
-        .
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}"
+  only: [master]
 
 docker-tag:
   stage: deploy
-  image: docker
-  services:
-    - docker:dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  only: [ tags ]
-  before_script:
-    - until docker info; do sleep 1; done
+  image:
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: [""]
   script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker buildx create --use
-    - |
-        docker buildx build \
-        --cache-from type=registry,ref=$CI_REGISTRY_IMAGE/cache:$CI_COMMIT_TAG \
-        --cache-to type=registry,ref=$CI_REGISTRY_IMAGE/cache:$CI_COMMIT_TAG,mode=max \
-        --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG \
-        --push \
-        .
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+  only: [tags]
