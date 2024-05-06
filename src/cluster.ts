@@ -62,6 +62,7 @@ export class Cluster {
   private readonly requestCache = new Map()
   private readonly tmpDir = join(tmpdir(), 'openbmclapi')
   private readonly keepalive = new Keepalive(ms('1m'), this)
+  private readonly downloadPromise = new Map<string, Promise<void>>()
   private socket?: Socket
 
   private server?: Server
@@ -271,7 +272,17 @@ export class Cluster {
 
         const hashPath = hashToFilename(hash)
         if (!(await this.storage.exists(hashPath))) {
-          await this.downloadFile(hash)
+          if (this.downloadPromise.has(hash)) {
+            await this.downloadPromise.get(hash)
+          } else {
+            const promise = this.downloadFile(hash)
+            try {
+              this.downloadPromise.set(hash, promise)
+              await promise
+            } finally {
+              this.downloadPromise.delete(hash)
+            }
+          }
         }
         res.set('x-bmclapi-hash', hash)
         const {bytes, hits} = await this.storage.express(hashPath, req, res, next)
