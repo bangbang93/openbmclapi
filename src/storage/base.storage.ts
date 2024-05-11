@@ -5,7 +5,6 @@ import {logger} from '../logger.js'
 import type {IFileInfo} from '../types.js'
 import {AlistWebdavStorage} from './alist-webdav.storage.js'
 import {FileStorage} from './file.storage.js'
-import {WebdavStorage} from './webdav.storage.js'
 
 export interface IStorage {
   init?(): Promise<void>
@@ -27,9 +26,6 @@ export function getStorage(config: Config): IStorage {
   switch (config.storage) {
     case 'file':
       storage = new FileStorage(join(process.cwd(), 'cache'))
-      break
-    case 'webdav':
-      storage = new WebdavStorage(config.storageOpts)
       break
     case 'alist':
       storage = new AlistWebdavStorage(config.storageOpts)
