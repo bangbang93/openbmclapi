@@ -40,7 +40,7 @@ interface ICounters {
   bytes: number
 }
 
-const whiteListDomain = ['localhost', 'bangbang93.com', '192.168']
+const whiteListDomain = ['localhost', 'bangbang93.com']
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = dirname(fileURLToPath(import.meta.url))
