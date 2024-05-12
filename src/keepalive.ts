@@ -46,23 +46,14 @@ export class Keepalive {
       })
       if (!status) {
         logger.fatal('kicked by server')
-        this.cluster.exit(1)
+        return await this.restart()
       }
       this.keepAliveError = 0
     } catch (e) {
       this.keepAliveError++
       logger.error(e, 'keep alive error')
-      if (this.keepAliveError >= 1) {
-        await Bluebird.try(async () => {
-          await this.cluster.disable()
-          this.cluster.connect()
-          await this.cluster.enable()
-        })
-          .timeout(ms('10m'), 'restart timeout')
-          .catch((e) => {
-            logger.error(e, 'restart failed')
-            this.cluster.exit(1)
-          })
+      if (this.keepAliveError >= 3) {
+        await this.restart()
       }
     } finally {
       void this.schedule()
@@ -89,5 +80,18 @@ export class Keepalive {
     this.cluster.counters.hits -= counters.hits
     this.cluster.counters.bytes -= counters.bytes
     return !!date
+  }
+
+  private async restart(): Promise<void> {
+    await Bluebird.try(async () => {
+      await this.cluster.disable()
+      this.cluster.connect()
+      await this.cluster.enable()
+    })
+      .timeout(ms('10m'), 'restart timeout')
+      .catch((e) => {
+        logger.error(e, 'restart failed')
+        this.cluster.exit(1)
+      })
   }
 }
