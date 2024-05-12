@@ -40,7 +40,7 @@ interface ICounters {
   bytes: number
 }
 
-const whiteListDomain = ['localhost', 'bangbang93.com']
+const whiteListDomain = ['localhost', 'bangbang93.com', '192.168']
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -158,6 +158,10 @@ export class Cluster {
   }
 
   public async syncFiles(fileList: IFileList, syncConfig: OpenbmclapiAgentConfiguration['sync']): Promise<void> {
+    const storageReady = await this.storage.check()
+    if (!storageReady) {
+      throw new Error('存储异常')
+    }
     const missingFiles = await this.storage.getMissingFiles(fileList.files)
     if (missingFiles.length === 0) {
       return

@@ -2,7 +2,7 @@ import Bluebird from 'bluebird'
 import colors from 'colors/safe.js'
 import type {Request, Response} from 'express'
 import fse from 'fs-extra'
-import {readdir, stat, unlink} from 'fs/promises'
+import {access, readdir, rm, stat, unlink, writeFile} from 'fs/promises'
 import {min} from 'lodash-es'
 import {join, sep} from 'path'
 import {logger} from '../logger.js'
@@ -13,12 +13,25 @@ import type {IStorage} from './base.storage.js'
 export class FileStorage implements IStorage {
   constructor(public readonly cacheDir: string) {}
 
+  public async check(): Promise<boolean> {
+    try {
+      await access(this.cacheDir)
+      await writeFile(join(this.cacheDir, '.check'), '')
+      return true
+    } catch (e) {
+      logger.error(e, '存储检查异常')
+      return false
+    } finally {
+      await rm(join(this.cacheDir, '.check'), {recursive: true, force: true})
+    }
+  }
+
   public async writeFile(path: string, content: Buffer): Promise<void> {
     await fse.outputFile(join(this.cacheDir, path), content)
   }
 
   public async exists(path: string): Promise<boolean> {
-    return fse.pathExists(join(this.cacheDir, path))
+    return await fse.pathExists(join(this.cacheDir, path))
   }
 
   public getAbsolutePath(path: string): string {
@@ -26,7 +39,7 @@ export class FileStorage implements IStorage {
   }
 
   public async getMissingFiles(files: IFileInfo[]): Promise<IFileInfo[]> {
-    return Bluebird.filter(
+    return await Bluebird.filter(
       files,
       async (file) => {
         const st = await stat(join(this.cacheDir, hashToFilename(file.hash))).catch(() => null)
@@ -70,7 +83,7 @@ export class FileStorage implements IStorage {
       res.attachment(name)
     }
     const path = this.getAbsolutePath(hashPath)
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       res.sendFile(path, {maxAge: '30d'}, (err) => {
         let bytes = res.socket?.bytesWritten ?? 0
         if (!err || err?.message === 'Request aborted' || err?.message === 'write EPIPE') {

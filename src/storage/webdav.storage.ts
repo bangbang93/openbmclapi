@@ -50,6 +50,18 @@ export class WebdavStorage implements IStorage {
     }
   }
 
+  public async check(): Promise<boolean> {
+    try {
+      await this.client.putFileContents(join(this.basePath, '.check'), Buffer.from(Date.now().toString()))
+      return true
+    } catch (e) {
+      logger.error(e, '存储检查异常')
+      return false
+    } finally {
+      await this.client.deleteFile(join(this.basePath, '.check'))
+    }
+  }
+
   public async writeFile(path: string, content: Buffer, fileInfo: IFileInfo): Promise<void> {
     if (content.length === 0) {
       this.emptyFiles.add(path)

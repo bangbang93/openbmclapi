@@ -8,6 +8,9 @@ import {FileStorage} from './file.storage.js'
 
 export interface IStorage {
   init?(): Promise<void>
+
+  check(): Promise<boolean>
+
   writeFile(path: string, content: Buffer, fileInfo: IFileInfo): Promise<void>
 
   exists(path: string): Promise<boolean>

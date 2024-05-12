@@ -21,6 +21,11 @@ export async function bootstrap(version: string): Promise<void> {
   const cluster = new Cluster(config.clusterSecret, version, tokenManager)
   await cluster.init()
 
+  const storageReady = await cluster.storage.check()
+  if (!storageReady) {
+    throw new Error('存储异常')
+  }
+
   const configuration = await cluster.getConfiguration()
   const files = await cluster.getFileList()
   logger.info(`${files.files.length} files`)
