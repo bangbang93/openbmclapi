@@ -218,8 +218,11 @@ export class Cluster {
         } catch (e) {
           hasError = true
           if (e instanceof HTTPError) {
-            logger.error({err: e}, `下载文件${file.path}失败: ${e.response.statusCode}, url: ${e.response.url}`)
-            logger.trace({err: e, options: e.options, redirectUrls: e.response.redirectUrls}, toString(e.response.body))
+            logger.error(
+              {redirectUrls: e.response.redirectUrls},
+              `下载文件${file.path}失败: ${e.response.statusCode}, url: ${e.response.url}`,
+            )
+            logger.trace({err: e}, toString(e.response.body))
           } else {
             logger.error({err: e}, `下载文件${file.path}失败`)
           }
