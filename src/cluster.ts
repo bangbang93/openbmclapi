@@ -205,7 +205,7 @@ export class Cluster {
                 })
             },
             {
-              maxRetryTime: 10,
+              retries: 10,
             },
           )
           const isFileCorrect = validateFile(res.body, file.hash)
