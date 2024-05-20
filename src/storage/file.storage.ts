@@ -1,7 +1,7 @@
 import Bluebird from 'bluebird'
 import colors from 'colors/safe.js'
 import type {Request, Response} from 'express'
-import fse, {mkdirp} from 'fs-extra'
+import fse from 'fs-extra'
 import {readdir, rm, stat, unlink, writeFile} from 'fs/promises'
 import {min} from 'lodash-es'
 import {join, sep} from 'path'
@@ -15,7 +15,7 @@ export class FileStorage implements IStorage {
 
   public async check(): Promise<boolean> {
     try {
-      await mkdirp(this.cacheDir)
+      await fse.mkdirp(this.cacheDir)
       await writeFile(join(this.cacheDir, '.check'), '')
       return true
     } catch (e) {
