@@ -191,6 +191,7 @@ export class Cluster {
         try {
           const res = await pRetry(
             () => {
+              bar.update(0)
               return this.got
                 .get<Buffer>(file.path.substring(1), {
                   searchParams: {
@@ -206,6 +207,9 @@ export class Cluster {
             },
             {
               retries: 10,
+              onFailedAttempt: (e) => {
+                logger.debug({err: e}, `下载文件${file.path}失败，正在重试`)
+              },
             },
           )
           const isFileCorrect = validateFile(res.body, file.hash)
