@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 import {z} from 'zod'
+import env from 'env-var'
 
 export interface IConfigFlavor {
   runtime: string
@@ -9,54 +10,21 @@ export interface IConfigFlavor {
 export class Config {
   public static instance: Config
 
-  public readonly clusterId: string
-  public readonly clusterSecret: string
-  public readonly clusterIp?: string
-  public readonly port: number = 4000
-  public readonly clusterPublicPort?: number
-  public readonly byoc: boolean = false
-  public readonly disableAccessLog: boolean = false
+  public readonly clusterId = env.get('CLUSTER_ID').required().asString()
+  public readonly clusterSecret = env.get('CLUSTER_SECRET').required().asString()
+  public readonly clusterIp? = env.get('CLUSTER_IP').asString()
+  public readonly port: number = env.get('CLUSTER_PORT').default(4000).asPortNumber()
+  public readonly clusterPublicPort = env.get('CLUSTER_PUBLIC_PORT').default(this.port).asPortNumber()
+  public readonly byoc = env.get('CLUSTER_BYOC').asBool()
+  public readonly disableAccessLog = env.get('DISABLE_ACCESS_LOG').asBool()
 
-  public readonly enableNginx: boolean = false
-  public readonly enableUpnp: boolean = false
-  public readonly storage: string = 'file'
-  public readonly storageOpts: unknown
+  public readonly enableNginx = env.get('ENABLE_NGINX').asBool()
+  public readonly enableUpnp = env.get('ENABLE_UPNP').asBool()
+  public readonly storage = env.get('CLUSTER_STORAGE').default('file').asString()
+  public readonly storageOpts = env.get('CLUSTER_STORAGE_OPTIONS').asJsonObject()
   public readonly flavor: IConfigFlavor
 
   private constructor() {
-    if (!process.env.CLUSTER_ID) {
-      throw new Error('CLUSTER_ID is not set')
-    }
-    this.clusterId = process.env.CLUSTER_ID
-    if (!process.env.CLUSTER_SECRET) {
-      throw new Error('CLUSTER_SECRET is not set')
-    }
-    this.clusterSecret = process.env.CLUSTER_SECRET
-    this.clusterIp = process.env.CLUSTER_IP
-    if (process.env.CLUSTER_PORT) {
-      this.port = parseInt(process.env.CLUSTER_PORT, 10)
-      if (isNaN(this.port)) {
-        throw new Error('CLUSTER_PORT is not a number')
-      }
-    }
-    this.clusterPublicPort = process.env.CLUSTER_PUBLIC_PORT ? parseInt(process.env.CLUSTER_PUBLIC_PORT, 10) : undefined
-    if (typeof this.clusterPublicPort === 'number' && isNaN(this.clusterPublicPort)) {
-      throw new Error('CLUSTER_PUBLIC_PORT is not a number')
-    }
-    this.byoc = process.env.CLUSTER_BYOC === 'true'
-    this.enableNginx = process.env.ENABLE_NGINX === 'true'
-    if (process.env.CLUSTER_STORAGE) {
-      this.storage = process.env.CLUSTER_STORAGE
-    }
-    if (process.env.CLUSTER_STORAGE_OPTIONS) {
-      this.storageOpts = JSON.parse(process.env.CLUSTER_STORAGE_OPTIONS)
-    }
-    if (process.env.DISABLE_ACCESS_LOG) {
-      this.disableAccessLog = true
-    }
-    if (process.env.ENABLE_UPNP) {
-      this.enableUpnp = true
-    }
     this.flavor = {
       runtime: `Node.js/${process.version}`,
       storage: this.storage,
