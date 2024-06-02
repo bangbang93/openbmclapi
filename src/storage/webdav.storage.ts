@@ -58,7 +58,11 @@ export class WebdavStorage implements IStorage {
       logger.error(e, '存储检查异常')
       return false
     } finally {
-      await this.client.deleteFile(join(this.basePath, '.check'))
+      try {
+        await this.client.deleteFile(join(this.basePath, '.check'))
+      } catch (e) {
+        logger.warn(e, '删除临时文件失败')
+      }
     }
   }
 
