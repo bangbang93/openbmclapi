@@ -85,15 +85,12 @@ export class WebdavStorage implements IStorage {
   }
 
   public async getMissingFiles<T extends {path: string; hash: string; size: number}>(files: T[]): Promise<T[]> {
-    const manifest = new Map<string, T>()
-    for (const file of files) {
-      manifest.set(file.hash, file)
-    }
+    const remoteFileList = new Map(files.map((file) => [file.hash, file]))
     if (this.files.size !== 0) {
       for (const hash of this.files.keys()) {
-        manifest.delete(hash)
+        remoteFileList.delete(hash)
       }
-      return [...manifest.values()]
+      return [...remoteFileList.values()]
     }
     let queue = [this.basePath]
     let count = 0
@@ -113,10 +110,10 @@ export class WebdavStorage implements IStorage {
               count++
               continue
             }
-            const file = manifest.get(entry.basename)
+            const file = remoteFileList.get(entry.basename)
             if (file && file.size === entry.size) {
               this.files.set(entry.basename, {size: entry.size, path: entry.filename})
-              manifest.delete(entry.basename)
+              remoteFileList.delete(entry.basename)
             }
           }
         },
@@ -126,7 +123,7 @@ export class WebdavStorage implements IStorage {
       )
       queue = nextQueue
     } while (queue.length !== 0)
-    return [...manifest.values()]
+    return [...remoteFileList.values()]
   }
 
   public async gc(files: {path: string; hash: string; size: number}[]): Promise<void> {
