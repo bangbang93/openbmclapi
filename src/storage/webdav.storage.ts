@@ -1,6 +1,7 @@
 import colors from 'colors/safe.js'
 import type {Request, Response} from 'express'
 import {Agent} from 'node:https'
+import pMap from 'p-map'
 import {join} from 'path'
 import rangeParser from 'range-parser'
 import {createClient, type FileStat, type WebDAVClient} from 'webdav'
@@ -94,24 +95,32 @@ export class WebdavStorage implements IStorage {
       }
       return [...manifest.values()]
     }
-    const queue = [this.basePath]
+    let queue = [this.basePath]
     do {
-      const dir = queue.pop()
-      if (!dir) break
-      const entries = (await this.client.getDirectoryContents(dir)) as FileStat[]
-      entries.sort((a, b) => a.basename.localeCompare(b.basename))
-      logger.trace(`checking ${dir}`)
-      for (const entry of entries) {
-        if (entry.type === 'directory') {
-          queue.push(entry.filename)
-          continue
-        }
-        const file = manifest.get(entry.basename)
-        if (file && file.size === entry.size) {
-          this.files.set(entry.basename, {size: entry.size, path: entry.filename})
-          manifest.delete(entry.basename)
-        }
-      }
+      const nextQueue = [] as string[]
+      await pMap(
+        queue,
+        async (dir) => {
+          const entries = (await this.client.getDirectoryContents(dir)) as FileStat[]
+          entries.sort((a, b) => a.basename.localeCompare(b.basename))
+          logger.trace(`checking ${dir}`)
+          for (const entry of entries) {
+            if (entry.type === 'directory') {
+              nextQueue.push(entry.filename)
+              continue
+            }
+            const file = manifest.get(entry.basename)
+            if (file && file.size === entry.size) {
+              this.files.set(entry.basename, {size: entry.size, path: entry.filename})
+              manifest.delete(entry.basename)
+            }
+          }
+        },
+        {
+          concurrency: 10,
+        },
+      )
+      queue = nextQueue
     } while (queue.length !== 0)
     return [...manifest.values()]
   }
