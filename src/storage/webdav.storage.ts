@@ -96,17 +96,21 @@ export class WebdavStorage implements IStorage {
       return [...manifest.values()]
     }
     let queue = [this.basePath]
+    let count = 0
+    let cur = 0
     do {
       const nextQueue = [] as string[]
       await pMap(
         queue,
+        // eslint-disable-next-line no-loop-func
         async (dir) => {
           const entries = (await this.client.getDirectoryContents(dir)) as FileStat[]
           entries.sort((a, b) => a.basename.localeCompare(b.basename))
-          logger.trace(`checking ${dir}`)
+          logger.trace(`checking ${dir}, (${++cur}/${count})`)
           for (const entry of entries) {
             if (entry.type === 'directory') {
               nextQueue.push(entry.filename)
+              count++
               continue
             }
             const file = manifest.get(entry.basename)
