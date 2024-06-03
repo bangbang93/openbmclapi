@@ -86,9 +86,9 @@ export async function bootstrap(version: string): Promise<void> {
         logger.debug('没有新文件')
         return
       }
-      lastFileList = fileList
       const configuration = await cluster.getConfiguration()
       await cluster.syncFiles(files, configuration.sync)
+      lastFileList = fileList
     } finally {
       checkFileInterval = setTimeout(() => {
         checkFile(lastFileList).catch((e) => {
