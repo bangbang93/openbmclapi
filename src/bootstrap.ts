@@ -31,6 +31,7 @@ export async function bootstrap(version: string): Promise<void> {
   logger.info(`${files.files.length} files`)
   try {
     await cluster.syncFiles(files, configuration.sync)
+    logger.info('回收文件')
     await cluster.storage.gc(files.files)
   } catch (e) {
     if (e instanceof HTTPError) {
@@ -55,6 +56,7 @@ export async function bootstrap(version: string): Promise<void> {
   const server = cluster.setupExpress(proto === 'https' && !config.enableNginx)
   let checkFileInterval: NodeJS.Timeout
   try {
+    logger.info('请求上线')
     await cluster.listen()
     await cluster.enable()
 
