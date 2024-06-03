@@ -93,9 +93,10 @@ export class WebdavStorage implements IStorage {
       return [...remoteFileList.values()]
     }
     let queue = [this.basePath]
-    let count = 0
+    let count = 1
     let cur = 0
-    do {
+
+    while (queue.length !== 0) {
       const nextQueue = [] as string[]
       await pMap(
         queue,
@@ -122,7 +123,7 @@ export class WebdavStorage implements IStorage {
         },
       )
       queue = nextQueue
-    } while (queue.length !== 0)
+    }
     return [...remoteFileList.values()]
   }
 
