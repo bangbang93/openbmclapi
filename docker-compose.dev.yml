@@ -1,11 +1,15 @@
 version: '3'
 services:
   openbmclapi:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - USER=${UID-1000}
     env_file:
       - .env
     volumes:
-    - ./cache:/opt/openbmclapi/cache
+      - ./cache:/opt/openbmclapi/cache
     network_mode: host
     user: "${UID-1000}:${GID-1000}"
     logging:

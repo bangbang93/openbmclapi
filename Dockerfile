@@ -14,12 +14,19 @@ FROM $BASE_IMAGE AS build
 RUN apt-get update && \
     apt-get install -y nginx tini
 
+ARG USER=${USER:-root}
+
+RUN chown -R $USER /var/log/nginx /var/lib/nginx
+
+USER $USER
+
 WORKDIR /opt/openbmclapi
 COPY package-lock.json package.json ./
 RUN npm ci --omit=dev
 
 COPY --from=install /opt/openbmclapi/dist ./dist
 COPY nginx/ /opt/openbmclapi/nginx
+
 
 ENV CLUSTER_PORT=4000
 EXPOSE $CLUSTER_PORT
