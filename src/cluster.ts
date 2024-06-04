@@ -2,6 +2,7 @@ import {decompress} from '@mongodb-js/zstd'
 import {ChildProcess, spawn} from 'child_process'
 import {MultiBar} from 'cli-progress'
 import colors from 'colors/safe.js'
+import delay from 'delay'
 import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
 import fse from 'fs-extra'
@@ -357,6 +358,12 @@ export class Cluster {
     this.nginxProcess = spawn('nginx', ['-c', confFile], {
       stdio: [null, logFd.fd, 'inherit'],
     })
+
+    await delay(ms('1s'))
+
+    if (this.nginxProcess.exitCode !== null) {
+      throw new Error(`nginx exit with code ${this.nginxProcess.exitCode}`)
+    }
 
     const tail = new Tail(logFile)
     if (!config.disableAccessLog) {
