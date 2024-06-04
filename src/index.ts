@@ -1,6 +1,7 @@
 import cluster from 'cluster'
 import {config} from 'dotenv'
 import {readFileSync} from 'fs'
+import ms from 'ms'
 import {fileURLToPath} from 'url'
 import {bootstrap} from './bootstrap.js'
 
@@ -38,4 +39,20 @@ function forkWorker(): void {
       backoff = 1
     }
   })
+
+  function onStop(): void {
+    worker.disconnect()
+    worker.on('exit', () => {
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(0)
+    })
+    const ref = setTimeout(() => {
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(0)
+    }, ms('30s'))
+    ref.unref()
+  }
+
+  process.on('SIGINT', onStop)
+  process.on('SIGTERM', onStop)
 }

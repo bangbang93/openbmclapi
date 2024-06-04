@@ -102,7 +102,7 @@ export async function bootstrap(version: string): Promise<void> {
   }
 
   let stopping = false
-  const onStop = async (signal: NodeJS.Signals): Promise<void> => {
+  const onStop = async (signal: string): Promise<void> => {
     console.log(`got ${signal}, unregistering cluster`)
     if (stopping) {
       // eslint-disable-next-line n/no-process-exit
@@ -127,4 +127,10 @@ export async function bootstrap(version: string): Promise<void> {
   process.once('SIGINT', (signal) => {
     void onStop(signal)
   })
+
+  if (nodeCluster.isWorker) {
+    process.on('disconnect', () => {
+      void onStop('disconnect')
+    })
+  }
 }
