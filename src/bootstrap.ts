@@ -77,6 +77,7 @@ export async function bootstrap(version: string): Promise<void> {
       cluster.exit(1)
     }
   }
+
   try {
     logger.info('回收文件')
     await cluster.storage.gc(files.files)
@@ -84,6 +85,7 @@ export async function bootstrap(version: string): Promise<void> {
     logger.error('gc error')
     throw e
   }
+
   async function checkFile(lastFileList: IFileList): Promise<void> {
     logger.debug('refresh files')
     try {
