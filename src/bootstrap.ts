@@ -31,8 +31,6 @@ export async function bootstrap(version: string): Promise<void> {
   logger.info(`${files.files.length} files`)
   try {
     await cluster.syncFiles(files, configuration.sync)
-    logger.info('回收文件')
-    await cluster.storage.gc(files.files)
   } catch (e) {
     if (e instanceof HTTPError) {
       logger.error({url: e.response.url}, 'download error')
@@ -78,6 +76,13 @@ export async function bootstrap(version: string): Promise<void> {
     } else {
       cluster.exit(1)
     }
+  }
+  try {
+    logger.info('回收文件')
+    await cluster.storage.gc(files.files)
+  } catch (e) {
+    logger.error('gc error')
+    throw e
   }
   async function checkFile(lastFileList: IFileList): Promise<void> {
     logger.debug('refresh files')
