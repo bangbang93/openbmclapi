@@ -463,16 +463,20 @@ export class Cluster {
   }
 
   public async disable(): Promise<void> {
+    if (!this.socket) return
     this.keepalive.stop()
     this.wantEnable = false
-    return await new Promise((resolve, reject) => {
-      this.socket?.emit('disable', null, ([err, ack]: [unknown, unknown]) => {
-        this.isEnabled = false
-        if (err || ack !== true) return reject(err || ack)
-        this.socket?.disconnect()
-        resolve()
-      })
-    })
+    const [err, ack] = (await this.socket.emitWithAck('disable', null)) as [object, boolean]
+    this.isEnabled = false
+    if (err) {
+      if (typeof err === 'object' && 'message' in err) {
+        throw new Error(err.message as string)
+      }
+    }
+    if (!ack) {
+      throw new Error('节点禁用失败')
+    }
+    this.socket?.disconnect()
   }
 
   public async downloadFile(hash: string): Promise<void> {
@@ -490,12 +494,15 @@ export class Cluster {
   }
 
   public async requestCert(): Promise<void> {
-    const cert = await new Promise<{cert: string; key: string}>((resolve, reject) => {
-      this.socket?.emit('request-cert', ([err, cert]: [unknown, {cert: string; key: string}]) => {
-        if (err) return reject(err)
-        resolve(cert)
-      })
-    })
+    if (!this.socket) throw new Error('未连接到服务器')
+    const [err, cert] = (await this.socket.emitWithAck('request-cert')) as [object, {cert: string; key: string}]
+    if (err) {
+      if (typeof err === 'object' && 'message' in err) {
+        throw new Error(err.message as string)
+      } else {
+        throw new Error('请求证书失败', {cause: err})
+      }
+    }
     await fse.outputFile(join(this.tmpDir, 'cert.pem'), cert.cert)
     await fse.outputFile(join(this.tmpDir, 'key.pem'), cert.key)
   }
