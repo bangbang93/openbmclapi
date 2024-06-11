@@ -83,6 +83,7 @@ export async function bootstrap(version: string): Promise<void> {
     await cluster.storage.gc(files.files)
   } catch (e) {
     logger.error('gc error')
+    logger.error(e)
   }
 
   async function checkFile(lastFileList: IFileList): Promise<void> {
