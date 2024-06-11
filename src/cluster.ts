@@ -209,7 +209,15 @@ export class Cluster {
             {
               retries: 10,
               onFailedAttempt: (e) => {
-                logger.debug({err: e}, `下载文件${file.path}失败，正在重试`)
+                if (e.cause instanceof HTTPError) {
+                  logger.debug(
+                    {redirectUrls: e.cause.response.redirectUrls},
+                    `下载文件${file.path}失败: ${e.cause.response.statusCode}`,
+                  )
+                  logger.trace({err: e}, toString(e.cause.response.body))
+                } else {
+                  logger.debug({err: e}, `下载文件${file.path}失败，正在重试`)
+                }
               },
             },
           )
