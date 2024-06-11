@@ -433,6 +433,7 @@ export class Cluster {
     this.socket.on('disconnect', (reason) => {
       logger.warn(`与服务器断开连接: ${reason}`)
       this.isEnabled = false
+      this.keepalive.stop()
     })
     this.socket.on('exception', (err) => {
       logger.error(err, 'exception')
