@@ -37,6 +37,10 @@ export async function bootstrap(version: string): Promise<void> {
     }
     throw e
   }
+  logger.info('回收文件')
+  cluster.storage.gc(files.files).catch((e: unknown) => {
+    logger.error({err: e}, 'gc error')
+  })
 
   cluster.connect()
   const proto = config.byoc ? 'http' : 'https'
@@ -76,13 +80,6 @@ export async function bootstrap(version: string): Promise<void> {
     } else {
       cluster.exit(1)
     }
-  }
-
-  try {
-    logger.info('回收文件')
-    await cluster.storage.gc(files.files)
-  } catch (e) {
-    logger.error({err: e}, 'gc error')
   }
 
   async function checkFile(lastFileList: IFileList): Promise<void> {
