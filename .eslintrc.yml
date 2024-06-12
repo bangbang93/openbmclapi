@@ -4,5 +4,8 @@ env:
 extends:
   - '@bangbang93/recommended'
   - prettier
+plugins:
+  - prettier
 rules:
+  prettier/prettier: error
   no-console: off
