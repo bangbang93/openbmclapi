@@ -12,6 +12,7 @@ import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
 import {Agent as HttpsAgent} from 'https'
+import stringifySafe from 'json-stringify-safe'
 import {template, toString} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
@@ -227,7 +228,7 @@ export class Cluster {
                       .post('openbmclapi/report', {
                         json: {
                           urls: redirectUrls,
-                          error: serializeError(e),
+                          error: stringifySafe(serializeError(e)),
                         },
                       })
                       .catch((e) => {
