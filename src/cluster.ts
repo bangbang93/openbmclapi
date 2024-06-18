@@ -209,7 +209,7 @@ export class Cluster {
             },
             {
               retries: 10,
-              onFailedAttempt: (e) => {
+              onFailedAttempt: async (e) => {
                 if (e.cause instanceof HTTPError) {
                   logger.debug(
                     {redirectUrls: e.cause.response.redirectUrls},
@@ -218,6 +218,22 @@ export class Cluster {
                   logger.trace({err: e}, toString(e.cause.response.body))
                 } else {
                   logger.debug({err: e}, `下载文件${file.path}失败，正在重试`)
+                }
+
+                if (e instanceof RequestError) {
+                  const redirectUrls = e.response?.redirectUrls
+                  if (redirectUrls) {
+                    await this.got
+                      .post('openbmclapi/report', {
+                        json: {
+                          urls: redirectUrls,
+                          error: serializeError(e),
+                        },
+                      })
+                      .catch((e) => {
+                        logger.error(e, '上报重定向失败')
+                      })
+                  }
                 }
               },
             },
@@ -239,21 +255,6 @@ export class Cluster {
             logger.trace({err: e}, toString(e.response.body))
           } else {
             logger.error({err: e}, `下载文件${file.path}失败`)
-          }
-          if (e instanceof RequestError) {
-            const redirectUrls = e.response?.redirectUrls
-            if (redirectUrls) {
-              await this.got
-                .post('openbmclapi/report', {
-                  json: {
-                    urls: redirectUrls,
-                    error: serializeError(e),
-                  },
-                })
-                .catch((e) => {
-                  logger.error(e, '上报重定向失败')
-                })
-            }
           }
         } finally {
           totalBar.increment()
