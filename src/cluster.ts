@@ -7,7 +7,7 @@ import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
 import fse from 'fs-extra'
 import {mkdtemp, open, readFile, rm} from 'fs/promises'
-import got, {type Got, HTTPError} from 'got'
+import got, {type Got, HTTPError, RequestError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
@@ -21,6 +21,7 @@ import {tmpdir} from 'os'
 import pMap from 'p-map'
 import pRetry from 'p-retry'
 import {basename, dirname, join} from 'path'
+import {serializeError} from 'serialize-error'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
@@ -238,6 +239,21 @@ export class Cluster {
             logger.trace({err: e}, toString(e.response.body))
           } else {
             logger.error({err: e}, `下载文件${file.path}失败`)
+          }
+          if (e instanceof RequestError) {
+            const redirectUrls = e.response?.redirectUrls
+            if (redirectUrls) {
+              await this.got
+                .post('openbmclapi/report', {
+                  json: {
+                    urls: redirectUrls,
+                    error: serializeError(e),
+                  },
+                })
+                .catch((e) => {
+                  logger.error(e, '上报重定向失败')
+                })
+            }
           }
         } finally {
           totalBar.increment()
