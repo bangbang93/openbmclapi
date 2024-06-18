@@ -22,7 +22,6 @@ import {tmpdir} from 'os'
 import pMap from 'p-map'
 import pRetry from 'p-retry'
 import {basename, dirname, join} from 'path'
-import {serializeError} from 'serialize-error'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
@@ -211,24 +210,25 @@ export class Cluster {
             {
               retries: 10,
               onFailedAttempt: async (e) => {
-                if (e.cause instanceof HTTPError) {
+                const cause = e.cause
+                if (cause instanceof HTTPError) {
                   logger.debug(
-                    {redirectUrls: e.cause.response.redirectUrls},
-                    `下载文件${file.path}失败: ${e.cause.response.statusCode}`,
+                    {redirectUrls: cause.response.redirectUrls},
+                    `下载文件${file.path}失败: ${cause.response.statusCode}`,
                   )
-                  logger.trace({err: e}, toString(e.cause.response.body))
+                  logger.trace({err: e}, toString(cause.response.body))
                 } else {
                   logger.debug({err: e}, `下载文件${file.path}失败，正在重试`)
                 }
 
-                if (e instanceof RequestError) {
-                  const redirectUrls = e.response?.redirectUrls
+                if (cause instanceof RequestError) {
+                  const redirectUrls = cause.response?.redirectUrls
                   if (redirectUrls) {
                     await this.got
                       .post('openbmclapi/report', {
                         json: {
                           urls: redirectUrls,
-                          error: stringifySafe(serializeError(e)),
+                          error: stringifySafe({message: cause.message}),
                         },
                       })
                       .catch((e) => {
