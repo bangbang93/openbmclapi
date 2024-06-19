@@ -184,7 +184,6 @@ export class Cluster {
     })
     const totalBar = multibar.create(missingFiles.length, 0, {filename: '总文件数'})
     const parallel = syncConfig.concurrency
-    const noopen = syncConfig.source === 'center' ? '1' : ''
     let hasError = false
     await pMap(
       missingFiles,
@@ -196,9 +195,6 @@ export class Cluster {
               bar.update(0)
               return this.got
                 .get<Buffer>(file.path.substring(1), {
-                  searchParams: {
-                    noopen,
-                  },
                   retry: {
                     limit: 0,
                   },
