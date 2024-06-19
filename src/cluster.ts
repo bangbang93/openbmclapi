@@ -179,7 +179,7 @@ export class Cluster {
     logger.info(syncConfig, '同步策略')
     const multibar = new MultiBar({
       format: ' {bar} | {filename} | {value}/{total}',
-      noTTYOutput: !process.stdout.isTTY,
+      noTTYOutput: true,
       notTTYSchedule: ms('10s'),
     })
     const totalBar = multibar.create(missingFiles.length, 0, {filename: '总文件数'})
@@ -206,25 +206,28 @@ export class Cluster {
             {
               retries: 10,
               onFailedAttempt: async (e) => {
-                const cause = e.cause
-                if (cause instanceof HTTPError) {
+                if (e instanceof HTTPError) {
                   logger.debug(
-                    {redirectUrls: cause.response.redirectUrls},
-                    `下载文件${file.path}失败: ${cause.response.statusCode}`,
+                    {redirectUrls: e.response.redirectUrls},
+                    `下载文件${file.path}失败: ${e.response.statusCode}`,
                   )
-                  logger.trace({err: e}, toString(cause.response.body))
+                  logger.trace({err: e}, toString(e.response.body))
                 } else {
                   logger.debug({err: e}, `下载文件${file.path}失败，正在重试`)
                 }
 
-                if (cause instanceof RequestError) {
-                  const redirectUrls = cause.response?.redirectUrls
-                  if (redirectUrls) {
+                if (e instanceof RequestError) {
+                  const redirectUrls = e.response?.redirectUrls
+                  if (redirectUrls?.length) {
+                    const urls = [
+                      new URL(file.path, this.prefixUrl).toString(),
+                      ...redirectUrls.map((e) => e.toString()),
+                    ]
                     await this.got
                       .post('openbmclapi/report', {
                         json: {
-                          urls: redirectUrls,
-                          error: stringifySafe({message: cause.message}),
+                          urls,
+                          error: stringifySafe({message: e.message}),
                         },
                       })
                       .catch((e) => {
