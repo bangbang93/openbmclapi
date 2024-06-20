@@ -184,10 +184,10 @@ export class Cluster {
       async (file) => {
         const bar = multibar.create(file.size, 0, {filename: file.path})
         try {
-          const res = await pRetry(
-            () => {
+          await pRetry(
+            async () => {
               bar.update(0)
-              return this.got
+              const res = await this.got
                 .get<Buffer>(file.path.substring(1), {
                   retry: {
                     limit: 0,
@@ -196,6 +196,12 @@ export class Cluster {
                 .on('downloadProgress', (progress) => {
                   bar.update(progress.transferred)
                 })
+
+              const isFileCorrect = validateFile(res.body, file.hash)
+              if (!isFileCorrect) {
+                throw new RequestError(`文件${file.path}校验失败`, new Error(`文件${file.path}校验失败`), res.request)
+              }
+              await this.storage.writeFile(hashToFilename(file.hash), res.body, file)
             },
             {
               retries: 10,
@@ -232,13 +238,6 @@ export class Cluster {
               },
             },
           )
-          const isFileCorrect = validateFile(res.body, file.hash)
-          if (!isFileCorrect) {
-            hasError = true
-            logger.error({redirectUrls: res.redirectUrls}, `文件${file.path}校验失败`)
-            return
-          }
-          await this.storage.writeFile(hashToFilename(file.hash), res.body, file)
         } catch (e) {
           hasError = true
           if (e instanceof HTTPError) {
