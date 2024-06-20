@@ -1,6 +1,6 @@
 import express, {type Router} from 'express'
-import type {Config} from './config.js'
-import {checkSign} from './util.js'
+import type {Config} from '../config.js'
+import {checkSign} from '../util.js'
 
 export default function MeasureRouteFactory(config: Config): Router {
   const router = express.Router()

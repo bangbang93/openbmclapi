@@ -21,7 +21,7 @@ import {userInfo} from 'node:os'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
 import pRetry from 'p-retry'
-import {basename, dirname, join} from 'path'
+import {dirname, join} from 'path'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
@@ -30,7 +30,8 @@ import {FileListSchema} from './constants.js'
 import {validateFile} from './file.js'
 import {Keepalive} from './keepalive.js'
 import {logger} from './logger.js'
-import MeasureRouteFactory from './measure.route.js'
+import {AuthRouteFactory} from './routes/auth.route.js'
+import MeasureRouteFactory from './routes/measure.route.js'
 import {getStorage, type IStorage} from './storage/base.storage.js'
 import type {TokenManager} from './token.js'
 import type {IFileList} from './types.js'
@@ -271,23 +272,7 @@ export class Cluster {
     const app = http2Express(express)
     app.enable('trust proxy')
 
-    app.get('/auth', (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const oldUrl = req.get('x-original-uri')
-        if (!oldUrl) return res.status(403).send('invalid sign')
-
-        const url = new URL(oldUrl, 'http://localhost')
-        const hash = basename(url.pathname)
-        const query = Object.fromEntries(url.searchParams.entries())
-        const signValid = checkSign(hash, this.clusterSecret, query)
-        if (!signValid) {
-          return res.status(403).send('invalid sign')
-        }
-        res.sendStatus(204)
-      } catch (e) {
-        return next(e)
-      }
-    })
+    app.get('/auth', AuthRouteFactory(config))
 
     if (!config.disableAccessLog) {
       app.use(morgan('combined'))
