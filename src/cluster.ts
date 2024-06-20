@@ -7,11 +7,12 @@ import express, {type NextFunction, type Request, type Response} from 'express'
 import {readFileSync} from 'fs'
 import fse from 'fs-extra'
 import {mkdtemp, open, readFile, rm} from 'fs/promises'
-import got, {type Got, HTTPError} from 'got'
+import got, {type Got, HTTPError, RequestError} from 'got'
 import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
 import {Agent as HttpsAgent} from 'https'
+import stringifySafe from 'json-stringify-safe'
 import {template, toString} from 'lodash-es'
 import morgan from 'morgan'
 import ms from 'ms'
@@ -169,35 +170,25 @@ export class Cluster {
       return
     }
     logger.info(`mismatch ${missingFiles.length} files, start syncing`)
-    if (process.env.FORCE_NOOPEN) {
-      syncConfig = {
-        concurrency: 1,
-        source: 'center',
-      }
-    }
     logger.info(syncConfig, '同步策略')
     const multibar = new MultiBar({
       format: ' {bar} | {filename} | {value}/{total}',
-      noTTYOutput: !process.stdout.isTTY,
+      noTTYOutput: true,
       notTTYSchedule: ms('10s'),
     })
     const totalBar = multibar.create(missingFiles.length, 0, {filename: '总文件数'})
     const parallel = syncConfig.concurrency
-    const noopen = syncConfig.source === 'center' ? '1' : ''
     let hasError = false
     await pMap(
       missingFiles,
       async (file) => {
         const bar = multibar.create(file.size, 0, {filename: file.path})
         try {
-          const res = await pRetry(
-            () => {
+          await pRetry(
+            async () => {
               bar.update(0)
-              return this.got
+              const res = await this.got
                 .get<Buffer>(file.path.substring(1), {
-                  searchParams: {
-                    noopen,
-                  },
                   retry: {
                     limit: 0,
                   },
@@ -205,29 +196,48 @@ export class Cluster {
                 .on('downloadProgress', (progress) => {
                   bar.update(progress.transferred)
                 })
+
+              const isFileCorrect = validateFile(res.body, file.hash)
+              if (!isFileCorrect) {
+                throw new RequestError(`文件${file.path}校验失败`, new Error(`文件${file.path}校验失败`), res.request)
+              }
+              await this.storage.writeFile(hashToFilename(file.hash), res.body, file)
             },
             {
               retries: 10,
-              onFailedAttempt: (e) => {
-                if (e.cause instanceof HTTPError) {
+              onFailedAttempt: async (e) => {
+                if (e instanceof HTTPError) {
                   logger.debug(
-                    {redirectUrls: e.cause.response.redirectUrls},
-                    `下载文件${file.path}失败: ${e.cause.response.statusCode}`,
+                    {redirectUrls: e.response.redirectUrls},
+                    `下载文件${file.path}失败: ${e.response.statusCode}`,
                   )
-                  logger.trace({err: e}, toString(e.cause.response.body))
+                  logger.trace({err: e}, toString(e.response.body))
                 } else {
                   logger.debug({err: e}, `下载文件${file.path}失败，正在重试`)
+                }
+
+                if (e instanceof RequestError) {
+                  const redirectUrls = e.response?.redirectUrls
+                  if (redirectUrls?.length) {
+                    const urls = [
+                      new URL(file.path, this.prefixUrl).toString(),
+                      ...redirectUrls.map((e) => e.toString()),
+                    ]
+                    await this.got
+                      .post('openbmclapi/report', {
+                        json: {
+                          urls,
+                          error: stringifySafe({message: e.message}),
+                        },
+                      })
+                      .catch((e) => {
+                        logger.error(e, '上报重定向失败')
+                      })
+                  }
                 }
               },
             },
           )
-          const isFileCorrect = validateFile(res.body, file.hash)
-          if (!isFileCorrect) {
-            hasError = true
-            logger.error({redirectUrls: res.redirectUrls}, `文件${file.path}校验失败`)
-            return
-          }
-          await this.storage.writeFile(hashToFilename(file.hash), res.body, file)
         } catch (e) {
           hasError = true
           if (e instanceof HTTPError) {

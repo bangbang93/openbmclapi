@@ -19,6 +19,7 @@ const storageConfigSchema = z.object({
 })
 
 export class WebdavStorage implements IStorage {
+  public static readonly configSchema = storageConfigSchema
   protected readonly client: WebDAVClient
   protected readonly storageConfig: z.infer<typeof storageConfigSchema>
   protected readonly basePath: string
