@@ -40,8 +40,8 @@ function forkWorker(): void {
     }
   })
 
-  function onStop(): void {
-    worker.disconnect()
+  function onStop(signal: string): void {
+    worker.kill(signal)
     worker.on('exit', () => {
       // eslint-disable-next-line n/no-process-exit
       process.exit(0)
