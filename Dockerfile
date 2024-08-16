@@ -33,6 +33,7 @@ WORKDIR /opt/openbmclapi
 COPY --from=modules /opt/openbmclapi/node_modules ./node_modules
 COPY --from=install /opt/openbmclapi/dist ./dist
 COPY nginx/ /opt/openbmclapi/nginx
+COPY package.json ./
 
 
 ENV CLUSTER_PORT=4000
