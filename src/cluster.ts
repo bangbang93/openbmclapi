@@ -433,6 +433,9 @@ export class Cluster {
     this.socket.on('exception', (err) => {
       logger.error(err, 'exception')
     })
+    this.socket.on('warden-error', (data) => {
+      logger.warn(data, '主控回报巡检异常')
+    })
 
     const io = this.socket.io
     io.on('reconnect', (attempt: number) => {
