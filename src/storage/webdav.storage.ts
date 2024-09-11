@@ -1,5 +1,7 @@
 import colors from 'colors/safe.js'
 import type {Request, Response} from 'express'
+import Keyv from 'keyv'
+import ms from 'ms'
 import {Agent} from 'node:https'
 import pMap from 'p-map'
 import {join} from 'path'
@@ -26,6 +28,10 @@ export class WebdavStorage implements IStorage {
 
   protected files = new Map<string, {size: number; path: string}>()
   protected emptyFiles = new Set<string>()
+
+  protected existsCache = new Keyv({
+    ttl: ms('1h'),
+  })
 
   constructor(storageConfig: unknown) {
     try {
@@ -78,7 +84,14 @@ export class WebdavStorage implements IStorage {
   }
 
   public async exists(path: string): Promise<boolean> {
-    return await this.client.exists(join(this.basePath, path))
+    if (await this.existsCache.has(path)) {
+      return true
+    }
+    const exists = await this.client.exists(join(this.basePath, path))
+    if (exists) {
+      await this.existsCache.set(path, true)
+    }
+    return exists
   }
 
   public getAbsolutePath(path: string): string {
