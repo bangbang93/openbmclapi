@@ -41,6 +41,7 @@ function forkWorker(): void {
   })
 
   function onStop(signal: string): void {
+    worker.removeAllListeners('exit')
     worker.kill(signal)
     worker.on('exit', () => {
       // eslint-disable-next-line n/no-process-exit
