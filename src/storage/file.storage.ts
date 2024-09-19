@@ -6,7 +6,7 @@ import {readdir, rm, stat, unlink, writeFile} from 'fs/promises'
 import {min} from 'lodash-es'
 import {join, sep} from 'path'
 import {logger} from '../logger.js'
-import type {IFileInfo} from '../types.js'
+import {IFileInfo, IGCCounter} from '../types.js'
 import {hashToFilename} from '../util.js'
 import type {IStorage} from './base.storage.js'
 
@@ -51,7 +51,8 @@ export class FileStorage implements IStorage {
     )
   }
 
-  public async gc(files: {path: string; hash: string; size: number}[]): Promise<void> {
+  public async gc(files: {path: string; hash: string; size: number}[]): Promise<IGCCounter> {
+    const counter = {count: 0, size: 0}
     const fileSet = new Set<string>()
     for (const file of files) {
       fileSet.add(hashToFilename(file.hash))
@@ -72,9 +73,12 @@ export class FileStorage implements IStorage {
         if (!fileSet.has(p.replace(cacheDirWithSep, ''))) {
           logger.info(colors.gray(`delete expire file: ${p}`))
           await unlink(p)
+          counter.count++
+          counter.size += s.size
         }
       }
     } while (queue.length !== 0)
+    return counter
   }
 
   public async express(hashPath: string, req: Request, res: Response): Promise<{bytes: number; hits: number}> {

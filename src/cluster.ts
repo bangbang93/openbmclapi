@@ -22,6 +22,7 @@ import {tmpdir} from 'os'
 import pMap from 'p-map'
 import pRetry from 'p-retry'
 import {dirname, join} from 'path'
+import prettyBytes from 'pretty-bytes'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
@@ -514,6 +515,21 @@ export class Cluster {
     }
     // eslint-disable-next-line n/no-process-exit
     process.exit(code)
+  }
+
+  public gcBackground(files: IFileList): void {
+    this.storage
+      .gc(files.files)
+      .then((res) => {
+        if (res.count === 0) {
+          logger.info('没有过期文件')
+        } else {
+          logger.info(`文件回收完成，共删除${res.count}个文件，释放空间${prettyBytes(res.size)}`)
+        }
+      })
+      .catch((e: unknown) => {
+        logger.error({err: e}, 'gc error')
+      })
   }
 
   private async _enable(): Promise<void> {

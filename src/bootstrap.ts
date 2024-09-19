@@ -38,9 +38,7 @@ export async function bootstrap(version: string): Promise<void> {
     throw e
   }
   logger.info('回收文件')
-  cluster.storage.gc(files.files).catch((e: unknown) => {
-    logger.error({err: e}, 'gc error')
-  })
+  cluster.gcBackground(files)
 
   cluster.connect()
   const proto = config.byoc ? 'http' : 'https'

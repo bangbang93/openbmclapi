@@ -10,7 +10,7 @@ import {createClient, type FileStat, type WebDAVClient} from 'webdav'
 import {z} from 'zod'
 import {fromZodError} from 'zod-validation-error'
 import {logger} from '../logger.js'
-import type {IFileInfo} from '../types.js'
+import {IFileInfo, IGCCounter} from '../types.js'
 import type {IStorage} from './base.storage.js'
 
 const storageConfigSchema = z.object({
@@ -141,7 +141,8 @@ export class WebdavStorage implements IStorage {
     return [...remoteFileList.values()]
   }
 
-  public async gc(files: {path: string; hash: string; size: number}[]): Promise<void> {
+  public async gc(files: {path: string; hash: string; size: number}[]): Promise<IGCCounter> {
+    const counter = {count: 0, size: 0}
     const fileSet = new Set<string>()
     for (const file of files) {
       fileSet.add(file.hash)
@@ -161,9 +162,12 @@ export class WebdavStorage implements IStorage {
           logger.info(colors.gray(`delete expire file: ${entry.filename}`))
           await this.client.deleteFile(entry.filename)
           this.files.delete(entry.basename)
+          counter.count++
+          counter.size += entry.size
         }
       }
     } while (queue.length !== 0)
+    return counter
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await

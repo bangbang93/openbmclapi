@@ -8,3 +8,8 @@ export interface IFileInfo {
   size: number
   mtime: number
 }
+
+export interface IGCCounter {
+  count: number
+  size: number
+}
