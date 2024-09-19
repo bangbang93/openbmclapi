@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/bangbang93/openbmclapi#readme",
   "dependencies": {
+    "@bangbang93/service-errors": "^1.1.1",
     "@bangbang93/utils": "^6.9.1",
     "@mongodb-js/zstd": "^1.2.0",
     "@xmcl/nat-api": "^0.4.3",

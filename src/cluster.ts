@@ -30,6 +30,7 @@ import {FileListSchema} from './constants.js'
 import {validateFile} from './file.js'
 import {Keepalive} from './keepalive.js'
 import {logger} from './logger.js'
+import {beforeError} from './modules/got-hooks.js'
 import {AuthRouteFactory} from './routes/auth.route.js'
 import MeasureRouteFactory from './routes/measure.route.js'
 import {getStorage, type IStorage} from './storage/base.storage.js'
@@ -117,6 +118,7 @@ export class Cluster {
             }
           },
         ],
+        beforeError,
       },
     })
     this.storage = getStorage(config)
