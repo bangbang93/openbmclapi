@@ -122,10 +122,10 @@ export async function bootstrap(version: string): Promise<void> {
     server.close()
     cluster.nginxProcess?.kill()
   }
-  process.once('SIGTERM', (signal) => {
+  process.on('SIGTERM', (signal) => {
     void onStop(signal)
   })
-  process.once('SIGINT', (signal) => {
+  process.on('SIGINT', (signal) => {
     void onStop(signal)
   })
 
