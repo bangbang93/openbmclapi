@@ -81,6 +81,7 @@ export class Cluster {
     this._port = config.port
     this.publicPort = config.clusterPublicPort ?? config.port
     this.ua = `openbmclapi-cluster/${version}`
+    whiteListDomain.push(this.prefixUrl)
     this.got = got.extend({
       prefixUrl: this.prefixUrl,
       headers: {
