@@ -39,6 +39,7 @@ import type {TokenManager} from './token.js'
 import type {IFileList} from './types.js'
 import {setupUpnp} from './upnp.js'
 import {checkSign, hashToFilename} from './util.js'
+import {isPrivate} from 'ip'
 
 interface ICounters {
   hits: number
@@ -59,7 +60,7 @@ export class Cluster {
   public readonly storage: IStorage
 
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI ?? 'https://openbmclapi.bangbang93.com'
-  private readonly host?: string
+  private host?: string
   private _port: number | string
   private readonly publicPort: number
   private readonly ua: string
@@ -133,7 +134,12 @@ export class Cluster {
   public async init(): Promise<void> {
     await this.storage.init?.()
     if (config.enableUpnp) {
-      await setupUpnp(config.port, config.clusterPublicPort)
+      const ip = await setupUpnp(config.port, config.clusterPublicPort)
+      if (isPrivate(ip)) {
+        throw new Error(`无法获取公网IP, UPNP返回的IP位于私有地址段, IP: ${ip}`)
+      }
+      logger.info(`upnp映射成功，外网IP: ${ip}`)
+      this.host ??= ip
     }
   }
 
