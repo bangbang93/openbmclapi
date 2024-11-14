@@ -343,7 +343,7 @@ export class Cluster {
     const confFile = `${dir}/nginx/nginx.conf`
     const templateFile = 'nginx.conf'
     const confTemplate = await readFile(join(__dirname, '..', 'nginx', templateFile), 'utf8')
-    console.log('nginx conf', confFile)
+    logger.debug('nginx conf', confFile)
 
     await fse.copy(join(__dirname, '..', 'nginx'), dirname(confFile), {recursive: true, overwrite: true})
     await fse.outputFile(
@@ -379,7 +379,7 @@ export class Cluster {
         process.stdout.write('\n')
       })
     }
-    // eslint-disable-next-line max-len
+
     const logRegexp =
       /^(?<client>\S+) \S+ (?<userid>\S+) \[(?<datetime>[^\]]+)] "(?<method>[A-Z]+) (?<request>[^ "]+)? HTTP\/[0-9.]+" (?<status>[0-9]{3}) (?<size>[0-9]+|-) "(?<referrer>[^"]*)" "(?<useragent>[^"]*)"/
     tail.on('line', (line: string) => {
@@ -569,7 +569,7 @@ export class Cluster {
   }
 
   private onConnectionError(event: string, err: Error): void {
-    console.error(`${event}: cannot connect to server`, err)
+    logger.error(`${event}: cannot connect to server`, err)
     if (this.server) {
       this.server.close(() => {
         this.exit(1)

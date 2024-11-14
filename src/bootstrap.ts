@@ -67,8 +67,7 @@ export async function bootstrap(version: string): Promise<void> {
 
     checkFileInterval = setTimeout(() => {
       void checkFile(files).catch((e) => {
-        console.error('check file error')
-        console.error(e)
+        logger.error(e, 'check file error')
       })
     }, ms('10m'))
   } catch (e) {
@@ -95,8 +94,7 @@ export async function bootstrap(version: string): Promise<void> {
     } finally {
       checkFileInterval = setTimeout(() => {
         checkFile(lastFileList).catch((e) => {
-          console.error('check file error')
-          console.error(e)
+          logger.error(e, 'check file error')
         })
       }, ms('10m'))
     }
@@ -104,7 +102,7 @@ export async function bootstrap(version: string): Promise<void> {
 
   let stopping = false
   const onStop = async (signal: string): Promise<void> => {
-    console.log(`got ${signal}, unregistering cluster`)
+    logger.info(`got ${signal}, unregistering cluster`)
     if (stopping) {
       // eslint-disable-next-line n/no-process-exit
       process.exit(1)
@@ -117,8 +115,7 @@ export async function bootstrap(version: string): Promise<void> {
     }
     await cluster.disable()
 
-    // eslint-disable-next-line no-console
-    console.log('unregister success, waiting for background task, ctrl+c again to force kill')
+    logger.info('unregister success, waiting for background task, ctrl+c again to force kill')
     server.close()
     cluster.nginxProcess?.kill()
   }
