@@ -22,6 +22,10 @@ export class Config {
   public readonly enableUpnp = env.get('ENABLE_UPNP').asBool()
   public readonly storage = env.get('CLUSTER_STORAGE').default('file').asString()
   public readonly storageOpts = env.get('CLUSTER_STORAGE_OPTIONS').asJsonObject()
+
+  public readonly sslKey = env.get('SSL_KEY').asString()
+  public readonly sslCert = env.get('SSL_CERT').asString()
+
   public readonly flavor: IConfigFlavor
 
   private constructor() {

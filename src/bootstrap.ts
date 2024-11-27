@@ -45,9 +45,15 @@ export async function bootstrap(version: string): Promise<void> {
   cluster.connect()
   const proto = config.byoc ? 'http' : 'https'
   if (proto === 'https') {
-    logger.info('请求证书')
-    await cluster.requestCert()
+    if (config.sslCert && config.sslKey) {
+      logger.debug('使用自定义证书')
+      await cluster.useSelfCert()
+    } else {
+      logger.info('请求证书')
+      await cluster.requestCert()
+    }
   }
+
   if (config.enableNginx) {
     if (typeof cluster.port === 'number') {
       await cluster.setupNginx(join(__dirname, '..'), cluster.port, proto)

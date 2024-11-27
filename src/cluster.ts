@@ -518,6 +518,26 @@ export class Cluster {
     await fse.outputFile(join(this.tmpDir, 'key.pem'), cert.key)
   }
 
+  public async useSelfCert(): Promise<void> {
+    if (!config.sslCert) {
+      throw new Error('缺少ssl证书')
+    }
+    if (!config.sslKey) {
+      throw new Error('缺少ssl私钥')
+    }
+
+    if (await fse.pathExists(config.sslCert)) {
+      await fse.copyFile(config.sslCert, join(this.tmpDir, 'cert.pem'))
+    } else {
+      await fse.outputFile(join(this.tmpDir, 'cert.pem'), config.sslCert)
+    }
+    if (await fse.pathExists(config.sslKey)) {
+      await fse.copyFile(config.sslKey, join(this.tmpDir, 'key.pem'))
+    } else {
+      await fse.outputFile(join(this.tmpDir, 'key.pem'), config.sslKey)
+    }
+  }
+
   public exit(code: number = 0): void {
     if (this.nginxProcess) {
       this.nginxProcess.kill()
