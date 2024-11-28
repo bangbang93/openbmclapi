@@ -2,6 +2,7 @@ import got, {type Got} from 'got'
 import ms from 'ms'
 import {createHmac} from 'node:crypto'
 import {logger} from './logger.js'
+import {beforeError} from './modules/got-hooks.js'
 
 export class TokenManager {
   private token: string | undefined
@@ -21,6 +22,9 @@ export class TokenManager {
       },
       timeout: {
         request: ms('5m'),
+      },
+      hooks: {
+        beforeError,
       },
     })
   }

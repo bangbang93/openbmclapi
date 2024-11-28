@@ -21,7 +21,8 @@ import {userInfo} from 'node:os'
 import {tmpdir} from 'os'
 import pMap from 'p-map'
 import pRetry from 'p-retry'
-import {basename, dirname, join} from 'path'
+import {dirname, join} from 'path'
+import prettyBytes from 'pretty-bytes'
 import {connect, Socket} from 'socket.io-client'
 import {Tail} from 'tail'
 import {fileURLToPath} from 'url'
@@ -30,12 +31,15 @@ import {FileListSchema} from './constants.js'
 import {validateFile} from './file.js'
 import {Keepalive} from './keepalive.js'
 import {logger} from './logger.js'
-import MeasureRouteFactory from './measure.route.js'
+import {beforeError} from './modules/got-hooks.js'
+import {AuthRouteFactory} from './routes/auth.route.js'
+import MeasureRouteFactory from './routes/measure.route.js'
 import {getStorage, type IStorage} from './storage/base.storage.js'
 import type {TokenManager} from './token.js'
 import type {IFileList} from './types.js'
 import {setupUpnp} from './upnp.js'
 import {checkSign, hashToFilename} from './util.js'
+import {isPrivate} from 'ip'
 
 interface ICounters {
   hits: number
@@ -56,7 +60,7 @@ export class Cluster {
   public readonly storage: IStorage
 
   private readonly prefixUrl = process.env.CLUSTER_BMCLAPI ?? 'https://openbmclapi.bangbang93.com'
-  private readonly host?: string
+  private host?: string
   private _port: number | string
   private readonly publicPort: number
   private readonly ua: string
@@ -78,6 +82,7 @@ export class Cluster {
     this._port = config.port
     this.publicPort = config.clusterPublicPort ?? config.port
     this.ua = `openbmclapi-cluster/${version}`
+    whiteListDomain.push(this.prefixUrl)
     this.got = got.extend({
       prefixUrl: this.prefixUrl,
       headers: {
@@ -116,6 +121,7 @@ export class Cluster {
             }
           },
         ],
+        beforeError,
       },
     })
     this.storage = getStorage(config)
@@ -128,7 +134,12 @@ export class Cluster {
   public async init(): Promise<void> {
     await this.storage.init?.()
     if (config.enableUpnp) {
-      await setupUpnp(config.port, config.clusterPublicPort)
+      const ip = await setupUpnp(config.port, config.clusterPublicPort)
+      if (isPrivate(ip)) {
+        throw new Error(`无法获取公网IP, UPNP返回的IP位于私有地址段, IP: ${ip}`)
+      }
+      logger.info(`upnp映射成功，外网IP: ${ip}`)
+      this.host ??= ip
     }
   }
 
@@ -271,23 +282,7 @@ export class Cluster {
     const app = http2Express(express)
     app.enable('trust proxy')
 
-    app.get('/auth', (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const oldUrl = req.get('x-original-uri')
-        if (!oldUrl) return res.status(403).send('invalid sign')
-
-        const url = new URL(oldUrl, 'http://localhost')
-        const hash = basename(url.pathname)
-        const query = Object.fromEntries(url.searchParams.entries())
-        const signValid = checkSign(hash, this.clusterSecret, query)
-        if (!signValid) {
-          return res.status(403).send('invalid sign')
-        }
-        res.sendStatus(204)
-      } catch (e) {
-        return next(e)
-      }
-    })
+    app.get('/auth', AuthRouteFactory(config))
 
     if (!config.disableAccessLog) {
       app.use(morgan('combined'))
@@ -354,7 +349,7 @@ export class Cluster {
     const confFile = `${dir}/nginx/nginx.conf`
     const templateFile = 'nginx.conf'
     const confTemplate = await readFile(join(__dirname, '..', 'nginx', templateFile), 'utf8')
-    console.log('nginx conf', confFile)
+    logger.debug('nginx conf', confFile)
 
     await fse.copy(join(__dirname, '..', 'nginx'), dirname(confFile), {recursive: true, overwrite: true})
     await fse.outputFile(
@@ -390,7 +385,7 @@ export class Cluster {
         process.stdout.write('\n')
       })
     }
-    // eslint-disable-next-line max-len
+
     const logRegexp =
       /^(?<client>\S+) \S+ (?<userid>\S+) \[(?<datetime>[^\]]+)] "(?<method>[A-Z]+) (?<request>[^ "]+)? HTTP\/[0-9.]+" (?<status>[0-9]{3}) (?<size>[0-9]+|-) "(?<referrer>[^"]*)" "(?<useragent>[^"]*)"/
     tail.on('line', (line: string) => {
@@ -447,6 +442,9 @@ export class Cluster {
     })
     this.socket.on('exception', (err) => {
       logger.error(err, 'exception')
+    })
+    this.socket.on('warden-error', (data) => {
+      logger.warn(data, '主控回报巡检异常')
     })
 
     const io = this.socket.io
@@ -546,6 +544,21 @@ export class Cluster {
     process.exit(code)
   }
 
+  public gcBackground(files: IFileList): void {
+    this.storage
+      .gc(files.files)
+      .then((res) => {
+        if (res.count === 0) {
+          logger.info('没有过期文件')
+        } else {
+          logger.info(`文件回收完成，共删除${res.count}个文件，释放空间${prettyBytes(res.size)}`)
+        }
+      })
+      .catch((e: unknown) => {
+        logger.error({err: e}, 'gc error')
+      })
+  }
+
   private async _enable(): Promise<void> {
     let err: unknown
     let ack: unknown
@@ -582,7 +595,7 @@ export class Cluster {
   }
 
   private onConnectionError(event: string, err: Error): void {
-    console.error(`${event}: cannot connect to server`, err)
+    logger.error(`${event}: cannot connect to server`, err)
     if (this.server) {
       this.server.close(() => {
         this.exit(1)

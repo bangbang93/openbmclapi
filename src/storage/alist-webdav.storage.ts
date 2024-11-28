@@ -67,6 +67,9 @@ export class AlistWebdavStorage extends WebdavStorage {
       https: {
         rejectUnauthorized: false,
       },
+      timeout: {
+        request: 30e3,
+      },
     })
     if (resp.statusCode >= 200 && resp.statusCode < 300) {
       res.status(resp.statusCode).send(resp.body)

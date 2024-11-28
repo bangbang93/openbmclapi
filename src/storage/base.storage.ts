@@ -2,7 +2,7 @@ import type {NextFunction, Request, Response} from 'express'
 import {join} from 'path'
 import type {Config} from '../config.js'
 import {logger} from '../logger.js'
-import type {IFileInfo} from '../types.js'
+import {IFileInfo, IGCCounter} from '../types.js'
 import {AlistWebdavStorage} from './alist-webdav.storage.js'
 import {FileStorage} from './file.storage.js'
 
@@ -19,7 +19,7 @@ export interface IStorage {
 
   getMissingFiles(files: IFileInfo[]): Promise<IFileInfo[]>
 
-  gc(files: {path: string; hash: string; size: number}[]): Promise<void>
+  gc(files: {path: string; hash: string; size: number}[]): Promise<IGCCounter>
 
   express(hashPath: string, req: Request, res: Response, next?: NextFunction): Promise<{bytes: number; hits: number}>
 }
