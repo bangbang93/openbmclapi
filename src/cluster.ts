@@ -39,7 +39,7 @@ import type {TokenManager} from './token.js'
 import type {IFileList} from './types.js'
 import {setupUpnp} from './upnp.js'
 import {checkSign, hashToFilename} from './util.js'
-import {isPrivate} from 'ip'
+import * as ipPkg from 'ip'
 
 interface ICounters {
   hits: number
@@ -135,7 +135,7 @@ export class Cluster {
     await this.storage.init?.()
     if (config.enableUpnp) {
       const ip = await setupUpnp(config.port, config.clusterPublicPort)
-      if (isPrivate(ip)) {
+      if (ipPkg.isPrivate(ip)) {
         throw new Error(`无法获取公网IP, UPNP返回的IP位于私有地址段, IP: ${ip}`)
       }
       logger.info(`upnp映射成功，外网IP: ${ip}`)
