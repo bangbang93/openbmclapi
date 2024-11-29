@@ -64,6 +64,8 @@ docker compose up -d
 | ENABLE_NGINX        | 否  | false        | 使用 nginx 提供文件服务                                                                                        |
 | DISABLE_ACCESS_LOG  | 否  | false        | 禁用访问日志输出                                                                                               |
 | ENABLE_UPNP         | 否  | false        | 启用 UPNP 端口映射                                                                                           |
+| SSL_KEY             | 否  | -            | （仅当开启BYOC时）  SSL 证书私钥。可以直接粘贴证书内容，也可以填写文件名                                                              |
+| SSL_CERT            | 否  | -            | （仅当开启BYOC时）  SSL 证书公钥。可以直接粘贴证书内容，也可以填写文件名                                                              |
 
 如果你在源码中发现了其他环境变量, 那么它们是为了方便开发而存在的, 可能会随时修改, 不要在生产环境中使用
 
