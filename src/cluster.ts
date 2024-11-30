@@ -39,7 +39,7 @@ import type {TokenManager} from './token.js'
 import type {IFileList} from './types.js'
 import {setupUpnp} from './upnp.js'
 import {checkSign, hashToFilename} from './util.js'
-import * as ipPkg from 'ip'
+import ipPkg from 'ip'
 
 interface ICounters {
   hits: number
