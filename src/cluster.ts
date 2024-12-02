@@ -463,6 +463,17 @@ export class Cluster {
     io.on('reconnect_failed', this.onConnectionError.bind(this, 'reconnect_failed', new Error('reconnect failed')))
   }
 
+  public async portCheck(): Promise<void> {
+    await this.socket?.emitWithAck('port-check', {
+      host: this.host,
+      port: this.publicPort,
+      version: this.version,
+      byoc: config.byoc,
+      noFastEnable: process.env.NO_FAST_ENABLE === 'true',
+      flavor: config.flavor,
+    })
+  }
+
   public async enable(): Promise<void> {
     if (this.isEnabled) return
     logger.trace('enable')

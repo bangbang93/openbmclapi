@@ -20,6 +20,7 @@ export async function bootstrap(version: string): Promise<void> {
   await tokenManager.getToken()
   const cluster = new Cluster(config.clusterSecret, version, tokenManager)
   await cluster.init()
+  cluster.connect()
 
   let proto: 'http' | 'https' = 'https'
   if (config.byoc) {
@@ -44,6 +45,7 @@ export async function bootstrap(version: string): Promise<void> {
   }
   const server = cluster.setupExpress(proto === 'https' && !config.enableNginx)
   await cluster.listen()
+  await cluster.portCheck()
 
   const storageReady = await cluster.storage.check()
   if (!storageReady) {
@@ -64,7 +66,6 @@ export async function bootstrap(version: string): Promise<void> {
   logger.info('回收文件')
   cluster.gcBackground(files)
 
-  cluster.connect()
   let checkFileInterval: NodeJS.Timeout
   try {
     logger.info('请求上线')
