@@ -21,26 +21,6 @@ export async function bootstrap(version: string): Promise<void> {
   const cluster = new Cluster(config.clusterSecret, version, tokenManager)
   await cluster.init()
 
-  const storageReady = await cluster.storage.check()
-  if (!storageReady) {
-    throw new Error('存储异常')
-  }
-
-  const configuration = await cluster.getConfiguration()
-  const files = await cluster.getFileList()
-  logger.info(`${files.files.length} files`)
-  try {
-    await cluster.syncFiles(files, configuration.sync)
-  } catch (e) {
-    if (e instanceof HTTPError) {
-      logger.error({url: e.response.url}, 'download error')
-    }
-    throw e
-  }
-  logger.info('回收文件')
-  cluster.gcBackground(files)
-
-  cluster.connect()
   let proto: 'http' | 'https' = 'https'
   if (config.byoc) {
     // 当BYOC但是没有提供证书时，使用http
@@ -63,10 +43,31 @@ export async function bootstrap(version: string): Promise<void> {
     }
   }
   const server = cluster.setupExpress(proto === 'https' && !config.enableNginx)
+  await cluster.listen()
+
+  const storageReady = await cluster.storage.check()
+  if (!storageReady) {
+    throw new Error('存储异常')
+  }
+
+  const configuration = await cluster.getConfiguration()
+  const files = await cluster.getFileList()
+  logger.info(`${files.files.length} files`)
+  try {
+    await cluster.syncFiles(files, configuration.sync)
+  } catch (e) {
+    if (e instanceof HTTPError) {
+      logger.error({url: e.response.url}, 'download error')
+    }
+    throw e
+  }
+  logger.info('回收文件')
+  cluster.gcBackground(files)
+
+  cluster.connect()
   let checkFileInterval: NodeJS.Timeout
   try {
     logger.info('请求上线')
-    await cluster.listen()
     await cluster.enable()
 
     logger.info(colors.rainbow(`done, serving ${files.files.length} files`))
