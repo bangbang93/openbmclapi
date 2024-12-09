@@ -41,7 +41,7 @@
     "fs-extra": "^8.1.0",
     "got": "^14.2.0",
     "http2-express-bridge": "^1.0.7",
-    "ip": "^2.0.1",
+    "ipaddr.js": "^2.2.0",
     "json-stringify-safe": "^5.0.1",
     "keyv": "^4.5.4",
     "keyv-file": "^0.3.0",

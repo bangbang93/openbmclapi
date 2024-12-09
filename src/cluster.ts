@@ -12,6 +12,7 @@ import {createServer, Server} from 'http'
 import {createSecureServer} from 'http2'
 import http2Express from 'http2-express-bridge'
 import {Agent as HttpsAgent} from 'https'
+import ipaddr from 'ipaddr.js'
 import stringifySafe from 'json-stringify-safe'
 import {template, toString} from 'lodash-es'
 import morgan from 'morgan'
@@ -39,7 +40,6 @@ import type {TokenManager} from './token.js'
 import type {IFileList} from './types.js'
 import {setupUpnp} from './upnp.js'
 import {checkSign, hashToFilename} from './util.js'
-import ipPkg from 'ip'
 
 interface ICounters {
   hits: number
@@ -135,7 +135,11 @@ export class Cluster {
     await this.storage.init?.()
     if (config.enableUpnp) {
       const ip = await setupUpnp(config.port, config.clusterPublicPort)
-      if (ipPkg.isPrivate(ip)) {
+      const addr = ipaddr.parse(ip)
+      if (addr.kind() !== 'ipv4') {
+        throw new Error('不支持ipv6')
+      }
+      if (addr.range() !== 'unicast') {
         throw new Error(`无法获取公网IP, UPNP返回的IP位于私有地址段, IP: ${ip}`)
       }
       logger.info(`upnp映射成功，外网IP: ${ip}`)
