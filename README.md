@@ -120,4 +120,4 @@ openbmclapi 会自行同步需要的文件, 但是初次同步可能会速度过
 以下三台rsync服务器是相同的, 你可以选择任意一台进行同步
 - `rsync -rzvP openbmclapi@home.933.moe::openbmclapi cache`
 - `rsync -avP openbmclapi@storage.yserver.ink::bmcl cache`
-- `rsync -azvrhP openbmclapi@openbmclapi.home.mxd.moe::volume cache`
+- `rsync -azvrhP openbmclapi@openbmclapi.home.mxd.moe::data cache`
