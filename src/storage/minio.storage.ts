@@ -30,6 +30,7 @@ export class MinioStorage implements IStorage {
       secretKey: url.password,
       port: parseInt(url.port, 10),
       useSSL: url.protocol === 'https:',
+      region: url.searchParams.get('region') ?? undefined,
     })
     if (config.internalUrl) {
       const internalUrl = new URL(config.internalUrl)
@@ -39,6 +40,7 @@ export class MinioStorage implements IStorage {
         secretKey: internalUrl.password,
         port: parseInt(internalUrl.port, 10),
         useSSL: internalUrl.protocol === 'https:',
+        region: url.searchParams.get('region') ?? undefined,
       })
     } else {
       this.internalClient = this.client
