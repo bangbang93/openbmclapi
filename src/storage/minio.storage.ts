@@ -25,7 +25,7 @@ export class MinioStorage implements IStorage {
     const config = storageConfigSchema.parse(storageConfig)
     const url = new URL(config.url)
     this.client = new Client({
-      endPoint: url.origin,
+      endPoint: url.hostname,
       accessKey: url.username,
       secretKey: url.password,
       port: parseInt(url.port, 10),
@@ -34,7 +34,7 @@ export class MinioStorage implements IStorage {
     if (config.internalUrl) {
       const internalUrl = new URL(config.internalUrl)
       this.internalClient = new Client({
-        endPoint: internalUrl.origin,
+        endPoint: internalUrl.hostname,
         accessKey: internalUrl.username,
         secretKey: internalUrl.password,
         port: parseInt(internalUrl.port, 10),
