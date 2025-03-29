@@ -94,10 +94,6 @@ export class WebdavStorage implements IStorage {
     return exists
   }
 
-  public getAbsolutePath(path: string): string {
-    return this.client.getFileDownloadLink(join(this.basePath, path))
-  }
-
   public async getMissingFiles<T extends {path: string; hash: string; size: number}>(files: T[]): Promise<T[]> {
     const remoteFileList = new Map(files.map((file) => [file.hash, file]))
     if (this.files.size !== 0) {
