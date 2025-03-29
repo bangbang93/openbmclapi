@@ -1,7 +1,7 @@
 import colors from 'colors/safe.js'
 import {Request, Response} from 'express'
 import {BucketItem, Client} from 'minio'
-import {join} from 'path'
+import {basename, join} from 'path'
 import rangeParser from 'range-parser'
 import {z} from 'zod'
 import {logger} from '../logger.js'
@@ -84,7 +84,15 @@ export class MinioStorage implements IStorage {
     hits: number
   }> {
     const path = join(this.prefix, hashPath)
-    const url = await this.client.presignedGetObject(this.bucket, path, 60)
+    let resHeaders: {'response-content-disposition': string} | undefined
+    const fileInfo = this.files.get(hashPath)
+    if (fileInfo) {
+      const name = basename(fileInfo.path)
+      resHeaders = {
+        'response-content-disposition': `attachment; filename="${encodeURIComponent(name)}"`,
+      }
+    }
+    const url = await this.client.presignedGetObject(this.bucket, path, 60, resHeaders)
     res.redirect(url)
     const size = this.getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
     return {bytes: size, hits: 1}
