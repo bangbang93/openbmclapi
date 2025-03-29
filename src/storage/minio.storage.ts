@@ -10,12 +10,14 @@ import {IStorage} from './base.storage.js'
 
 const storageConfigSchema = z.object({
   url: z.string(),
+  internalUrl: z.string().optional(),
 })
 
 export class MinioStorage implements IStorage {
   protected files = new Map<string, {size: number; path: string}>()
 
   private readonly client: Client
+  private readonly internalClient: Client
   private readonly prefix: string
   private readonly bucket: string
 
@@ -29,6 +31,18 @@ export class MinioStorage implements IStorage {
       port: parseInt(url.port, 10),
       useSSL: url.protocol === 'https:',
     })
+    if (config.internalUrl) {
+      const internalUrl = new URL(config.internalUrl)
+      this.internalClient = new Client({
+        endPoint: internalUrl.origin,
+        accessKey: internalUrl.username,
+        secretKey: internalUrl.password,
+        port: parseInt(internalUrl.port, 10),
+        useSSL: internalUrl.protocol === 'https:',
+      })
+    } else {
+      this.internalClient = this.client
+    }
     const [bucket, ...prefix] = url.pathname.split('/').filter(Boolean)
     this.bucket = bucket
     this.prefix = prefix.join('/')
@@ -36,6 +50,7 @@ export class MinioStorage implements IStorage {
 
   public async check(): Promise<boolean> {
     try {
+      await this.internalClient.putObject(this.bucket, join(this.prefix, '.check'), Buffer.from(Date.now().toString()))
       await this.client.putObject(this.bucket, join(this.prefix, '.check'), Buffer.from(Date.now().toString()))
       return true
     } catch (e) {
@@ -43,6 +58,7 @@ export class MinioStorage implements IStorage {
       return false
     } finally {
       try {
+        await this.internalClient.removeObject(this.bucket, join(this.prefix, '.check'))
         await this.client.removeObject(this.bucket, join(this.prefix, '.check'))
       } catch (e) {
         logger.warn(e, '删除临时文件失败')
@@ -52,7 +68,7 @@ export class MinioStorage implements IStorage {
 
   public async exists(path: string): Promise<boolean> {
     try {
-      await this.client.statObject(this.bucket, join(this.prefix, path))
+      await this.internalClient.statObject(this.bucket, join(this.prefix, path))
       return true
     } catch {
       return false
@@ -80,14 +96,14 @@ export class MinioStorage implements IStorage {
     for (const file of files) {
       fileSet.add(file.hash)
     }
-    const scanStream = this.client.listObjectsV2(this.bucket, this.prefix)
+    const scanStream = this.internalClient.listObjectsV2(this.bucket, this.prefix)
     for await (const file of scanStream) {
       const item = file as BucketItem
       if (!item.name) continue
       const path = item.name.replace(this.prefix, '')
       if (!fileSet.has(path)) {
         logger.info(colors.gray(`delete expire file: ${path}`))
-        await this.client.removeObject(this.bucket, item.name)
+        await this.internalClient.removeObject(this.bucket, item.name)
         this.files.delete(path)
         counter.count++
         counter.size += file
@@ -105,7 +121,7 @@ export class MinioStorage implements IStorage {
       return [...remoteFileList.values()]
     }
 
-    const scanStream = this.client.listObjectsV2(this.bucket, this.prefix)
+    const scanStream = this.internalClient.listObjectsV2(this.bucket, this.prefix)
     for await (const file of scanStream) {
       const item = file as BucketItem
       if (!item.name) continue
@@ -120,7 +136,7 @@ export class MinioStorage implements IStorage {
   }
 
   public async writeFile(path: string, content: Buffer, fileInfo: IFileInfo): Promise<void> {
-    await this.client.putObject(this.bucket, join(this.prefix, path), content)
+    await this.internalClient.putObject(this.bucket, join(this.prefix, path), content)
     this.files.set(fileInfo.hash, fileInfo)
   }
 
