@@ -26,6 +26,7 @@ export class WebdavStorage implements IStorage {
   protected readonly storageConfig: z.infer<typeof storageConfigSchema>
   protected readonly basePath: string
 
+  /** Map<hash, FileInfo> */
   protected files = new Map<string, {size: number; path: string}>()
   protected emptyFiles = new Set<string>()
 

@@ -14,6 +14,7 @@ const storageConfigSchema = z.object({
 })
 
 export class MinioStorage implements IStorage {
+  /** Map<hash, FileInfo> */
   protected files = new Map<string, {size: number; path: string}>()
 
   private readonly client: Client
@@ -131,15 +132,15 @@ export class MinioStorage implements IStorage {
       return [...remoteFileList.values()]
     }
 
-    const scanStream = this.internalClient.listObjectsV2(this.bucket, this.prefix)
+    const scanStream = this.internalClient.listObjectsV2(this.bucket, this.prefix, true)
     for await (const file of scanStream) {
       const item = file as BucketItem
       if (!item.name) continue
-      const path = item.name.replace(this.prefix, '')
-      const existsFile = remoteFileList.get(path)
+      const hash = basename(item.name)
+      const existsFile = remoteFileList.get(hash)
       if (existsFile && existsFile.size === item.size) {
-        this.files.set(path, {size: item.size, path})
-        remoteFileList.delete(path)
+        this.files.set(hash, {size: item.size, path: item.name.replace(this.prefix, '')})
+        remoteFileList.delete(hash)
       }
     }
     return [...remoteFileList.values()]
