@@ -11,6 +11,7 @@ import {IStorage} from './base.storage.js'
 const storageConfigSchema = z.object({
   url: z.string(),
   internalUrl: z.string().optional(),
+  customHost: z.string().optional(),
 })
 
 export class MinioStorage implements IStorage {
@@ -21,6 +22,7 @@ export class MinioStorage implements IStorage {
   private readonly internalClient: Client
   private readonly prefix: string
   private readonly bucket: string
+  private readonly customHost: string
 
   constructor(storageConfig: unknown) {
     const config = storageConfigSchema.parse(storageConfig)
@@ -33,6 +35,11 @@ export class MinioStorage implements IStorage {
       useSSL: url.protocol === 'https:',
       region: url.searchParams.get('region') ?? undefined,
     })
+    if (config.customHost) {
+      this.customHost = config.customHost
+    } else {
+      this.customHost = ''
+    }
     if (config.internalUrl) {
       const internalUrl = new URL(config.internalUrl)
       this.internalClient = new Client({
@@ -87,15 +94,20 @@ export class MinioStorage implements IStorage {
     hits: number
   }> {
     const path = join(this.prefix, hashPath)
-    let resHeaders: {'response-content-disposition': string} | undefined
     const fileInfo = this.files.get(hashPath)
+    let resHeaders: {'response-content-disposition': string} | undefined
     if (fileInfo) {
       const name = basename(fileInfo.path)
       resHeaders = {
         'response-content-disposition': `attachment; filename="${encodeURIComponent(name)}"`,
       }
     }
-    const url = await this.client.presignedGetObject(this.bucket, path, 60, resHeaders)
+    let url = ''
+    if (this.customHost) {
+      url = [this.customHost, path].join('/')
+    } else {
+      url = await this.client.presignedGetObject(this.bucket, path, 60, resHeaders)
+    }
     res.redirect(url)
     const size = this.getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
     return {bytes: size, hits: 1}
