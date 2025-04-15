@@ -36,6 +36,12 @@ export class MinioStorage implements IStorage {
       useSSL: url.protocol === 'https:',
       region: url.searchParams.get('region') ?? undefined,
     })
+    if(config.customHost) {
+      this.customHost = config.customHost
+    }
+    else {
+      this.customHost = ''
+    }
     if (config.internalUrl) {
       const internalUrl = new URL(config.internalUrl)
       this.internalClient = new Client({
