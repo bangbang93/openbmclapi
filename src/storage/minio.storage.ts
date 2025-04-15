@@ -7,10 +7,12 @@ import {z} from 'zod'
 import {logger} from '../logger.js'
 import {IFileInfo, IGCCounter} from '../types.js'
 import {IStorage} from './base.storage.js'
+import Fetch from 'node-fetch'
 
 const storageConfigSchema = z.object({
   url: z.string(),
   internalUrl: z.string().optional(),
+  customHost: z.string().optional(),
 })
 
 export class MinioStorage implements IStorage {
@@ -21,6 +23,7 @@ export class MinioStorage implements IStorage {
   private readonly internalClient: Client
   private readonly prefix: string
   private readonly bucket: string
+  private readonly customHost: string
 
   constructor(storageConfig: unknown) {
     const config = storageConfigSchema.parse(storageConfig)
@@ -71,7 +74,11 @@ export class MinioStorage implements IStorage {
 
   public async exists(path: string): Promise<boolean> {
     try {
-      await this.internalClient.statObject(this.bucket, join(this.prefix, path))
+      if (this.customHost) {
+        const res = await Fetch(join(this.customHost, this.prefix, path),{method: 'HEAD'})
+        return res.ok
+      }
+      else await this.internalClient.statObject(this.bucket, join(this.prefix, path))
       return true
     } catch {
       return false
@@ -87,15 +94,20 @@ export class MinioStorage implements IStorage {
     hits: number
   }> {
     const path = join(this.prefix, hashPath)
-    let resHeaders: {'response-content-disposition': string} | undefined
     const fileInfo = this.files.get(hashPath)
+    let resHeaders: {'response-content-disposition': string} | undefined
     if (fileInfo) {
       const name = basename(fileInfo.path)
       resHeaders = {
         'response-content-disposition': `attachment; filename="${encodeURIComponent(name)}"`,
       }
     }
-    const url = await this.client.presignedGetObject(this.bucket, path, 60, resHeaders)
+    let url = ''
+    if (this.customHost) {
+      url = [this.customHost, path].join('/')
+    } else {
+      url = await this.client.presignedGetObject(this.bucket, path, 60, resHeaders)
+    }
     res.redirect(url)
     const size = this.getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
     return {bytes: size, hits: 1}
