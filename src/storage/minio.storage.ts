@@ -18,15 +18,14 @@ const storageConfigSchema = z.object({
 export class MinioStorage implements IStorage {
   /** Map<hash, FileInfo> */
   protected files = new Map<string, {size: number; path: string}>()
+  protected existsCache = new Keyv({
+    ttl: ms('1h'),
+  })
 
   private readonly client: Client
   private readonly internalClient: Client
   private readonly prefix: string
   private readonly bucket: string
-
-  protected existsCache = new Keyv({
-    ttl: ms('1h'),
-  })
 
   constructor(storageConfig: unknown) {
     const config = storageConfigSchema.parse(storageConfig)
