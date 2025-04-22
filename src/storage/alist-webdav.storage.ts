@@ -6,6 +6,7 @@ import ms from 'ms'
 import {join} from 'path'
 import {z} from 'zod'
 import {fromZodError} from 'zod-validation-error'
+import {getSize} from '../util.js'
 import {WebdavStorage} from './webdav.storage.js'
 
 const storageConfigSchema = WebdavStorage.configSchema.extend({
@@ -51,7 +52,7 @@ export class AlistWebdavStorage extends WebdavStorage {
       return {bytes: 0, hits: 1}
     }
     const cachedUrl = await this.redirectUrlCache.get(hashPath)
-    const size = this.getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
+    const size = getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
     if (cachedUrl) {
       res.status(302).location(cachedUrl).send()
       return {bytes: size, hits: 1}
