@@ -1,6 +1,8 @@
 import colors from 'colors/safe.js'
 import {Request, Response} from 'express'
-import {BucketItem, Client} from 'minio'
+import Keyv from 'keyv'
+import {BucketItem, Client, S3Error} from 'minio'
+import ms from 'ms'
 import {basename, join} from 'path'
 import rangeParser from 'range-parser'
 import {z} from 'zod'
@@ -21,6 +23,10 @@ export class MinioStorage implements IStorage {
   private readonly internalClient: Client
   private readonly prefix: string
   private readonly bucket: string
+
+  protected existsCache = new Keyv({
+    ttl: ms('1h'),
+  })
 
   constructor(storageConfig: unknown) {
     const config = storageConfigSchema.parse(storageConfig)
@@ -71,10 +77,19 @@ export class MinioStorage implements IStorage {
 
   public async exists(path: string): Promise<boolean> {
     try {
+      if (await this.existsCache.has(path)) {
+        return true
+      }
       await this.internalClient.statObject(this.bucket, join(this.prefix, path))
+      await this.existsCache.set(path, true)
       return true
-    } catch {
-      return false
+    } catch (e) {
+      if (e instanceof S3Error) {
+        if (e.code === 'NoSuchKey') {
+          return false
+        }
+      }
+      throw e
     }
   }
 
