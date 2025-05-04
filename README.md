@@ -69,7 +69,7 @@ docker compose up -d
 | SSL_CERT            | 否  | -            | （仅当开启BYOC时）  SSL 证书公钥。可以直接粘贴证书内容，也可以填写文件名                                                              |
 | DISABLE_ACCESS_LOG            | 否  | false            | 关闭访问日志控制台输出                                                              |
 | NODE_ENV            | 否  | -            | 开发调试环境（development）                                                              |
-| DCLUSTER_BMCLAPI            | 否  | https://openbmclapi.bangbang93.com            | 主控地址                                                              |
+| CLUSTER_BMCLAPI            | 否  | https://openbmclapi.bangbang93.com            | 主控地址                                                              |
 
 如果你在源码中发现了其他环境变量, 那么它们是为了方便开发而存在的, 可能会随时修改, 不要在生产环境中使用
 
