@@ -468,14 +468,22 @@ export class Cluster {
   }
 
   public async portCheck(): Promise<void> {
-    await this.socket?.emitWithAck('port-check', {
+    const [err, ack] = (await this.socket?.emitWithAck('port-check', {
       host: this.host,
       port: this.publicPort,
       version: this.version,
       byoc: config.byoc,
       noFastEnable: process.env.NO_FAST_ENABLE === 'true',
       flavor: config.flavor,
-    })
+    })) as [object, boolean]
+    if (err) {
+      if (typeof err === 'object' && 'message' in err) {
+        throw new Error(err.message as string)
+      }
+    }
+    if (!ack) {
+      throw new Error('检查端口失败')
+    }
   }
 
   public async enable(): Promise<void> {
