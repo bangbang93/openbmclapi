@@ -1,6 +1,7 @@
 import cluster from 'cluster'
 import {config} from 'dotenv'
 import {readFileSync} from 'fs'
+import {random} from 'lodash-es'
 import ms from 'ms'
 import {fileURLToPath} from 'url'
 import {bootstrap} from './bootstrap.js'
@@ -26,14 +27,15 @@ if (!process.env.NO_DAEMON && cluster.isPrimary) {
 
 const BACKOFF_FACTOR = 2
 let backoff = 1
+const randomize = 0.2
 
 function forkWorker(): void {
   const worker = cluster.fork()
   worker.on('exit', (code, signal) => {
+    backoff = Math.round(Math.min(backoff * BACKOFF_FACTOR, 60) * random(1 - randomize, 1 + randomize, true))
     logger.warn(`工作进程 ${worker.id} 异常退出，code: ${code}, signal: ${signal}，${backoff}秒后重启`)
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     setTimeout(() => forkWorker(), backoff * 1000)
-    backoff = Math.min(backoff * BACKOFF_FACTOR, 60)
   })
   worker.on('message', (msg: unknown) => {
     if (msg === 'ready') {
