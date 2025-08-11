@@ -6,6 +6,7 @@ import {IFileInfo, IGCCounter} from '../types.js'
 import {AlistWebdavStorage} from './alist-webdav.storage.js'
 import {FileStorage} from './file.storage.js'
 import {MinioStorage} from './minio.storage.js'
+import {OssStorage} from './oss.storage.js'
 
 export interface IStorage {
   init?(): Promise<void>
@@ -34,6 +35,9 @@ export function getStorage(config: Config): IStorage {
       break
     case 'minio':
       storage = new MinioStorage(config.storageOpts)
+      break
+    case 'oss':
+      storage = new OssStorage(config.storageOpts)
       break
     default:
       throw new Error(`未知的存储类型${config.storage}`)
