@@ -3,6 +3,7 @@ import colors from 'colors/safe.js'
 import {Request, Response} from 'express'
 import Keyv from 'keyv'
 import ms from 'ms'
+import {pipeline} from 'node:stream/promises'
 import {basename, join} from 'path'
 import {z} from 'zod'
 import {logger} from '../logger.js'
@@ -17,6 +18,7 @@ const storageConfigSchema = z.object({
   bucket: z.string(),
   internal: z.boolean().default(false),
   prefix: z.string().default(''),
+  proxy: z.boolean().default(true),
 })
 
 export class OssStorage implements IStorage {
@@ -28,9 +30,11 @@ export class OssStorage implements IStorage {
 
   private readonly client: OSS
   private readonly prefix: string
+  private readonly config: z.infer<typeof storageConfigSchema>
 
   constructor(storageConfig: unknown) {
     const config = storageConfigSchema.parse(storageConfig)
+    this.config = config
     this.client = new OSS({...config})
     this.prefix = config.prefix
   }
@@ -86,11 +90,16 @@ export class OssStorage implements IStorage {
         'content-disposition': `attachment; filename="${encodeURIComponent(name)}"`,
       }
     }
-    const url = this.client.signatureUrl(path, {
-      expires: 60,
-      response: resHeaders,
-    })
-    res.redirect(url)
+    if (this.config.proxy) {
+      const stream = await this.client.getStream(path)
+      await pipeline(stream.stream, res)
+    } else {
+      const url = this.client.signatureUrl(path, {
+        expires: 60,
+        response: resHeaders,
+      })
+      res.redirect(url)
+    }
     const size = getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
     return await Promise.resolve({bytes: size, hits: 1})
   }
