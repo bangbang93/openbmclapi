@@ -114,7 +114,7 @@ export class OssStorage implements IStorage {
     while (list.objects.length > 0) {
       for (const item of list.objects) {
         if (!item.name) continue
-        const path = item.name.replace(this.prefix, '')
+        const path = basename(item.name.replace(this.prefix, ''))
         if (!fileSet.has(path)) {
           logger.info(colors.gray(`delete expire file: ${path}`))
           await this.client.delete(item.name)
