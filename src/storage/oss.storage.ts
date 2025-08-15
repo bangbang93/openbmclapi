@@ -12,13 +12,15 @@ import {getSize} from '../util.js'
 import {IStorage} from './base.storage.js'
 
 const storageConfigSchema = z.object({
-  region: z.string(),
   accessKeyId: z.string(),
   accessKeySecret: z.string(),
   bucket: z.string(),
   internal: z.boolean().default(false),
   prefix: z.string().default(''),
   proxy: z.boolean().default(true),
+  endpoint: z.string().optional(),
+  region: z.string().optional(),
+  cname: z.boolean().optional(),
 })
 
 export class OssStorage implements IStorage {
