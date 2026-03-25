@@ -115,5 +115,8 @@
     "hooks": {
       "pre-commit": "lint-staged"
     }
+  },
+  "overrides": {
+    "undici": "6.24.0"
   }
 }
