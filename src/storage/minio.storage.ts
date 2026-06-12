@@ -152,7 +152,7 @@ export class MinioStorage implements IStorage {
       if (!item.name) continue
       const hash = basename(item.name)
       const existsFile = remoteFileList.get(hash)
-      if (existsFile && existsFile.size === item.size) {
+      if (existsFile?.size === item.size) {
         this.files.set(hash, {size: item.size, path: item.name.replace(this.prefix, '')})
         remoteFileList.delete(hash)
       }

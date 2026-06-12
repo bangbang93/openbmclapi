@@ -105,9 +105,10 @@ export class Cluster {
             const url = options.url
             if (!url) return
             if (typeof url === 'string') {
+              const urlString: string = url
               if (
                 whiteListDomain.some((domain) => {
-                  return url.includes(domain)
+                  return urlString.includes(domain)
                 })
               ) {
                 options.headers.authorization = `Bearer ${await this.tokenManager.getToken()}`

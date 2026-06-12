@@ -5,7 +5,7 @@ import ms from 'ms'
 import {Agent} from 'node:https'
 import pMap from 'p-map'
 import {join} from 'path'
-import {createClient, type FileStat, type WebDAVClient} from 'webdav'
+import {createClient, type WebDAVClient} from 'webdav'
 import {z} from 'zod'
 import {fromZodError} from 'zod-validation-error'
 import {logger} from '../logger.js'
@@ -113,7 +113,7 @@ export class WebdavStorage implements IStorage {
         queue,
         // eslint-disable-next-line no-loop-func
         async (dir) => {
-          const entries = (await this.client.getDirectoryContents(dir)) as FileStat[]
+          const entries = await this.client.getDirectoryContents(dir)
           entries.sort((a, b) => a.basename.localeCompare(b.basename))
           logger.trace(`checking ${dir}, (${++cur}/${count})`)
           for (const entry of entries) {
@@ -148,7 +148,7 @@ export class WebdavStorage implements IStorage {
     do {
       const dir = queue.pop()
       if (!dir) break
-      const entries = (await this.client.getDirectoryContents(dir)) as FileStat[]
+      const entries = await this.client.getDirectoryContents(dir)
       entries.sort((a, b) => a.basename.localeCompare(b.basename))
       for (const entry of entries) {
         if (entry.type === 'directory') {

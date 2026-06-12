@@ -15,7 +15,7 @@ export function catchServiceError(error: RequestError): RequestError {
         body = JSON.parse(error.response.body) as Record<string, unknown>
       }
       if (body && ServiceError.isServiceError(body)) {
-        throw ServiceError.fromJSON(body as unknown as Record<string, unknown>)
+        throw ServiceError.fromJSON(body)
       }
     }
   }
