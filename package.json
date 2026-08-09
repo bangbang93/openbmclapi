@@ -29,7 +29,7 @@
     "@bangbang93/service-errors": "^1.1.1",
     "@bangbang93/utils": "^6.9.1",
     "@mongodb-js/zstd": "^1.2.0",
-    "@xmcl/nat-api": "^0.4.3",
+    "@xmcl/nat-api": "^0.4.4",
     "ali-oss": "^6.23.0",
     "avsc": "^5.7.4",
     "bluebird": "^3.5.5",
