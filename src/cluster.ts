@@ -72,6 +72,7 @@ export class Cluster {
   private socket?: Socket
 
   private server?: Server
+  private clusterId: string
 
   public constructor(
     private readonly clusterSecret: string,
@@ -83,6 +84,7 @@ export class Cluster {
     this.publicPort = config.clusterPublicPort ?? config.port
     this.ua = `openbmclapi-cluster/${version}`
     whiteListDomain.push(this.prefixUrl)
+    this.clusterId = config.clusterId
     this.got = got.extend({
       prefixUrl: this.prefixUrl,
       headers: {
@@ -316,6 +318,7 @@ export class Cluster {
           }
         }
         res.set('x-bmclapi-hash', hash)
+        res.set('x-bmclapi-id', this.clusterId)
         const {bytes, hits} = await this.storage.express(hashPath, req, res, next)
         this.counters.bytes += bytes
         this.counters.hits += hits
