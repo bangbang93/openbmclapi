@@ -17,6 +17,7 @@ export class Config {
   public readonly clusterPublicPort = env.get('CLUSTER_PUBLIC_PORT').default(this.port).asPortNumber()
   public readonly byoc = env.get('CLUSTER_BYOC').asBool()
   public readonly disableAccessLog = env.get('DISABLE_ACCESS_LOG').asBool()
+  public readonly disableSign = env.get('DISABLE_SIGN').asBool()
 
   public readonly enableNginx = env.get('ENABLE_NGINX').asBool()
   public readonly enableUpnp = env.get('ENABLE_UPNP').asBool()
