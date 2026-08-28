@@ -13,7 +13,7 @@ export function AuthRouteFactory(config: Config) {
       const hash = basename(url.pathname)
       const query = Object.fromEntries(url.searchParams.entries())
       const signValid = checkSign(hash, config.clusterSecret, query)
-      if (!signValid) {
+      if (!signValid && !config.disableSign) {
         return res.status(403).send('invalid sign')
       }
       res.sendStatus(204)

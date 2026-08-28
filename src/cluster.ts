@@ -369,6 +369,8 @@ export class Cluster {
         sock: this._port,
         user: userInfo().username,
         tmpdir: this.tmpDir,
+        clusterId: this.clusterId,
+        disableSign: config.disableSign,
       }),
     )
 
