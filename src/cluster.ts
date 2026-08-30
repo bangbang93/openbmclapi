@@ -72,6 +72,7 @@ export class Cluster {
   private socket?: Socket
 
   private server?: Server
+  private clusterId: string
 
   public constructor(
     private readonly clusterSecret: string,
@@ -83,6 +84,7 @@ export class Cluster {
     this.publicPort = config.clusterPublicPort ?? config.port
     this.ua = `openbmclapi-cluster/${version}`
     whiteListDomain.push(this.prefixUrl)
+    this.clusterId = config.clusterId
     this.got = got.extend({
       prefixUrl: this.prefixUrl,
       headers: {
@@ -297,7 +299,7 @@ export class Cluster {
       try {
         const hash = req.params.hash.toLowerCase()
         const signValid = checkSign(hash, this.clusterSecret, req.query as NodeJS.Dict<string>)
-        if (!signValid) {
+        if (!signValid && !config.disableSign) {
           return res.status(403).send('invalid sign')
         }
 
@@ -316,6 +318,7 @@ export class Cluster {
           }
         }
         res.set('x-bmclapi-hash', hash)
+        res.set('x-bmclapi-id', this.clusterId)
         const {bytes, hits} = await this.storage.express(hashPath, req, res, next)
         this.counters.bytes += bytes
         this.counters.hits += hits
@@ -366,6 +369,8 @@ export class Cluster {
         sock: this._port,
         user: userInfo().username,
         tmpdir: this.tmpDir,
+        clusterId: this.clusterId,
+        disableSign: config.disableSign,
       }),
     )
 
