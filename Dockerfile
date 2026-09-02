@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=node:20-bullseye-slim
+ARG BASE_IMAGE=node:22-bullseye-slim
 FROM $BASE_IMAGE AS install
 
 WORKDIR /opt/openbmclapi
