@@ -24,10 +24,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-      - run: npm ci
+          cache: 'pnpm'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
       ## linux & macos
-      - run: npm run build
+      - run: pnpm run build
       - run: |
           cp $(which node) .
           cp platforms/linux/run.sh .
