@@ -15,6 +15,7 @@
   "engines": {
     "node": ">=18 <24"
   },
+  "packageManager": "pnpm@11.20.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bangbang93/openbmclapi.git"
@@ -115,8 +116,5 @@
     "hooks": {
       "pre-commit": "lint-staged"
     }
-  },
-  "overrides": {
-    "undici": "6.24.0"
   }
 }
