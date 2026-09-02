@@ -94,9 +94,10 @@ docker compose up -d
 git clone https://github.com/bangbang93/openbmclapi
 cd openbmclapi
 ## 安装依赖
-npm ci
+corepack enable
+pnpm install
 ## 编译
-npm run build
+pnpm run build
 ## 运行
 node dist/index.js
 ```
