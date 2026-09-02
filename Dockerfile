@@ -4,18 +4,20 @@ FROM $BASE_IMAGE AS install
 WORKDIR /opt/openbmclapi
 RUN apt update && \
     apt install -y build-essential python3
-COPY package-lock.json package.json tsconfig.json ./
-RUN npm ci
+RUN corepack enable
+COPY package.json pnpm-lock.yaml tsconfig.json ./
+RUN pnpm install --frozen-lockfile
 COPY src ./src
-RUN npm run build
+RUN pnpm run build
 
 FROM $BASE_IMAGE AS modules
 WORKDIR /opt/openbmclapi
 
 RUN apt update && \
     apt install -y build-essential python3
-COPY package-lock.json package.json ./
-RUN npm ci --omit=dev
+RUN corepack enable
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
 
 FROM $BASE_IMAGE AS build
 
