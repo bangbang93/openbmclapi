@@ -176,7 +176,7 @@ export class WebdavStorage implements IStorage {
     const path = join(this.basePath, hashPath)
     const file = this.client.getFileDownloadLink(path)
     res.redirect(file)
-    const size = getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
+    const size = getSize(this.files.get(req.params.hash as string)?.size ?? 0, req.headers.range)
     return {bytes: size, hits: 1}
   }
 }

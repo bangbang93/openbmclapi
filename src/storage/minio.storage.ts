@@ -111,7 +111,7 @@ export class MinioStorage implements IStorage {
     }
     const url = await this.client.presignedGetObject(this.bucket, path, 60, resHeaders)
     res.redirect(url)
-    const size = getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
+    const size = getSize(this.files.get(req.params.hash as string)?.size ?? 0, req.headers.range)
     return {bytes: size, hits: 1}
   }
 

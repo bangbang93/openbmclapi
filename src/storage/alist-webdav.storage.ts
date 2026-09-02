@@ -52,7 +52,7 @@ export class AlistWebdavStorage extends WebdavStorage {
       return {bytes: 0, hits: 1}
     }
     const cachedUrl = await this.redirectUrlCache.get(hashPath)
-    const size = getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
+    const size = getSize(this.files.get(req.params.hash as string)?.size ?? 0, req.headers.range)
     if (cachedUrl) {
       res.status(302).location(cachedUrl).send()
       return {bytes: size, hits: 1}

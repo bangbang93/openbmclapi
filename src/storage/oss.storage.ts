@@ -102,7 +102,7 @@ export class OssStorage implements IStorage {
       })
       res.redirect(url)
     }
-    const size = getSize(this.files.get(req.params.hash)?.size ?? 0, req.headers.range)
+    const size = getSize(this.files.get(req.params.hash as string)?.size ?? 0, req.headers.range)
     return await Promise.resolve({bytes: size, hits: 1})
   }
 
