@@ -7,7 +7,8 @@ export default function MeasureRouteFactory(config: Config): Router {
 
   const measureRoute = router
 
-  router.get('/:size(\\d+)', (req, res) => {
+  router.get('/:size', (req, res, next) => {
+    if (!/^\d+$/.test(req.params.size)) return next()
     const isSignValid = checkSign(req.baseUrl + req.path, config.clusterSecret, req.query as NodeJS.Dict<string>)
     if (!isSignValid) return res.sendStatus(403)
     const size = parseInt(req.params.size, 10)

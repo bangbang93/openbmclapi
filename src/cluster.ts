@@ -295,9 +295,13 @@ export class Cluster {
       app.use(morgan('combined'))
     }
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    app.get('/download/:hash(\\w+)', async (req: Request, res: Response, next: NextFunction) => {
+    app.get('/download/:hash', async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const hash = req.params.hash.toLowerCase()
+        const hashParam = req.params.hash as string
+        if (!/^\w+$/.test(hashParam)) {
+          return next()
+        }
+        const hash = hashParam.toLowerCase()
         const signValid = checkSign(hash, this.clusterSecret, req.query as NodeJS.Dict<string>)
         if (!signValid && !config.disableSign) {
           return res.status(403).send('invalid sign')
