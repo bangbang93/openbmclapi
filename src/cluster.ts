@@ -48,6 +48,9 @@ interface ICounters {
 
 const whiteListDomain = ['localhost', 'bangbang93.com']
 
+// enable 重试退避表, 最后一位为封顶值
+const enableRetryBackoff = [ms('10s'), ms('20s'), ms('40s'), ms('80s'), ms('160s'), ms('5m')]
+
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -69,6 +72,10 @@ export class Cluster {
   private readonly keepalive = new Keepalive(ms('1m'), this)
   private readonly downloadPromise = new Map<string, Promise<void>>()
   private socket?: Socket
+  private enableRetryCount = 0
+  private enableFailureStartedAt?: number
+  private enableRetryTimer?: NodeJS.Timeout
+  private enableInFlight = false
 
   private server?: Server
   private clusterId: string
@@ -467,9 +474,7 @@ export class Cluster {
       logger.info(`在重试${attempt}次后恢复连接`)
       if (this.wantEnable) {
         logger.info('正在尝试重新启用服务')
-        this.enable()
-          .then(() => logger.info('重试连接并且准备就绪'))
-          .catch(this.onConnectionError.bind(this, 'reconnect'))
+        void this.tryEnable()
       }
     })
     io.on('reconnect_error', (err) => {
@@ -506,6 +511,7 @@ export class Cluster {
   }
 
   public async disable(): Promise<void> {
+    this.clearEnableRetry()
     if (!this.socket) return
     this.keepalive.stop()
     this.wantEnable = false
@@ -520,6 +526,40 @@ export class Cluster {
       throw new Error('节点禁用失败')
     }
     this.socket?.disconnect()
+  }
+
+  /**
+   * 带退避的 enable: 失败后按表退避重试 (10s 起步, 封顶 5 分钟),
+   * 连续失败超过 30 分钟视为不可恢复, 退出进程交给 worker 重启。
+   * enable 失败只说明主控未确认上线, 不代表本节点服务能力异常, 重试期间不关闭对外监听。
+   */
+  public async tryEnable(): Promise<void> {
+    this.clearEnableRetryTimer()
+    if (this.enableInFlight) return
+    this.enableInFlight = true
+    try {
+      await this.enable()
+      this.enableRetryCount = 0
+      this.enableFailureStartedAt = undefined
+      logger.info('重试连接并且准备就绪')
+    } catch (e) {
+      this.enableFailureStartedAt ??= Date.now()
+      const failedFor = Date.now() - this.enableFailureStartedAt
+      if (failedFor >= ms('30m')) {
+        logger.error(`连续 ${ms('30m')} enable 失败，放弃重试，退出进程`)
+        this.onConnectionError('enable-retry', e as Error)
+        return
+      }
+      this.enableRetryCount++
+      const delay = enableRetryBackoff[Math.min(this.enableRetryCount, enableRetryBackoff.length) - 1]
+      logger.error({err: e, attempt: this.enableRetryCount, retryInMs: delay}, 'enable 失败，稍后重试')
+      this.enableRetryTimer = setTimeout(() => {
+        this.enableRetryTimer = undefined
+        void this.tryEnable()
+      }, delay)
+    } finally {
+      this.enableInFlight = false
+    }
   }
 
   public async downloadFile(hash: string): Promise<void> {
@@ -626,6 +666,19 @@ export class Cluster {
 
     logger.info(colors.rainbow('start doing my job'))
     this.keepalive.start(this.socket)
+  }
+
+  private clearEnableRetryTimer(): void {
+    if (this.enableRetryTimer) {
+      clearTimeout(this.enableRetryTimer)
+      this.enableRetryTimer = undefined
+    }
+  }
+
+  private clearEnableRetry(): void {
+    this.clearEnableRetryTimer()
+    this.enableRetryCount = 0
+    this.enableFailureStartedAt = undefined
   }
 
   private onConnectionError(event: string, err: Error): void {

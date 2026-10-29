@@ -86,7 +86,7 @@ export class Keepalive {
     await Bluebird.try(async () => {
       await this.cluster.disable()
       this.cluster.connect()
-      await this.cluster.enable()
+      await this.cluster.tryEnable()
     })
       .timeout(ms('10m'), 'restart timeout')
       .catch((e) => {
