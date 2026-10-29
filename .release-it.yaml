@@ -5,5 +5,10 @@ git:
   push: true
   tag: true
   tagName: v${version}
-hooks:
-  after:version:bump: auto-changelog -p
+  commitMessage: 'chore: 发布 ${version}'
+plugins:
+  '@release-it/conventional-changelog':
+    preset: conventionalcommits
+    infile: CHANGELOG.md
+    header: '# Changelog'
+    ignoreRecommendedBump: false
