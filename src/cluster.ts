@@ -631,7 +631,12 @@ export class Cluster {
   private onConnectionError(event: string, err: Error): void {
     logger.error(`${event}: cannot connect to server`, err)
     if (this.server) {
+      // server.close 的回调要等所有存量连接排空, 可能永远不触发, 60 秒后强制退出
+      const forceExitTimer = setTimeout(() => {
+        this.exit(1)
+      }, ms('60s'))
       this.server.close(() => {
+        clearTimeout(forceExitTimer)
         this.exit(1)
       })
     } else {
