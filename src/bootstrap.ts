@@ -9,10 +9,28 @@ import {Cluster} from './cluster.js'
 import {config} from './config.js'
 import {logger} from './logger.js'
 import {TokenManager} from './token.js'
-import {IFileList} from './types.js'
+import {IFileInfo, IFileList} from './types.js'
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+
+/**
+ * 将增量文件列表合并进全量列表: 同 path 保留 mtime 较新的条目。
+ * 服务端文件更新后 hash 会变, 必须按 path 覆盖, 否则旧条目会残留导致反复下载已失效的文件。
+ */
+function mergeFileList(base: IFileList, delta: IFileList): IFileList {
+  const byPath = new Map<string, IFileInfo>()
+  for (const file of base.files) {
+    byPath.set(file.path, file)
+  }
+  for (const file of delta.files) {
+    const old = byPath.get(file.path)
+    if (!old || file.mtime >= old.mtime) {
+      byPath.set(file.path, file)
+    }
+  }
+  return {files: [...byPath.values()]}
+}
 
 export async function bootstrap(version: string): Promise<void> {
   logger.info(colors.green(`booting openbmclapi ${version}`))
@@ -99,9 +117,11 @@ export async function bootstrap(version: string): Promise<void> {
         logger.debug('没有新文件')
         return
       }
+      // 增量必须合并进全量后再同步: 直接用旧全量会漏掉新文件, 直接用增量会漏掉存量
+      const mergedFileList = mergeFileList(lastFileList, fileList)
       const configuration = await cluster.getConfiguration()
-      await cluster.syncFiles(files, configuration.sync)
-      lastFileList = fileList
+      await cluster.syncFiles(mergedFileList, configuration.sync)
+      lastFileList = mergedFileList
     } finally {
       checkFileInterval = setTimeout(() => {
         checkFile(lastFileList).catch((e) => {
