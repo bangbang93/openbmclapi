@@ -65,7 +65,6 @@ export class Cluster {
   private readonly publicPort: number
   private readonly ua: string
   private readonly got: Got
-  private readonly requestCache = new Map()
   private readonly tmpDir = join(tmpdir(), 'openbmclapi')
   private readonly keepalive = new Keepalive(ms('1m'), this)
   private readonly downloadPromise = new Map<string, Promise<void>>()
@@ -153,7 +152,10 @@ export class Cluster {
   public async getFileList(lastModified?: number): Promise<IFileList> {
     const res = await this.got.get('openbmclapi/files', {
       responseType: 'buffer',
-      cache: this.requestCache,
+      // 不要使用 got 的 cache 选项: cacheable-request 会在共享的 Keyv 实例上
+      // 为每个请求注册一个 once('error') 监听器, 而 keyv 的 once 包装导致该监听器
+      // 永远无法被移除, 造成监听器泄漏 (MaxListenersExceededWarning)。
+      // 文件列表已通过 lastModified 参数增量拉取, 无需 HTTP 缓存。
       searchParams: {
         lastModified,
       },
@@ -172,7 +174,6 @@ export class Cluster {
   public async getConfiguration(): Promise<OpenbmclapiAgentConfiguration> {
     const res = await this.got.get('openbmclapi/configuration', {
       responseType: 'json',
-      cache: this.requestCache,
     })
     return OpenbmclapiAgentConfigurationSchema.parse(res.body)
   }
